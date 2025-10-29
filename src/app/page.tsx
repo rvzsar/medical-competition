@@ -36,20 +36,20 @@ export default function HomePage() {
               Навигация
             </h2>
             <div className="space-y-3">
-              <Link 
-                href="/admin" 
+              <Link
+                href="/login"
                 className="block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
               >
-                Панель жюри
+                Вход для жюри
               </Link>
-              <Link 
-                href="/results" 
+              <Link
+                href="/results"
                 className="block bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors"
               >
                 Результаты
               </Link>
-              <Link 
-                href="/contests" 
+              <Link
+                href="/contests"
                 className="block bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition-colors"
               >
                 Конкурсы
@@ -121,7 +121,13 @@ export default function HomePage() {
               <p className="text-gray-600 mb-2">
                 Дополнительные вопросы для команд, претендующих на призовые места
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-orange-600 font-medium mb-1">
+                ⚠️ Проводится только при необходимости
+              </p>
+              <p className="text-xs text-gray-500">
+                Используется при возникновении спорной ситуации при выборе призового места
+              </p>
+              <p className="text-sm text-gray-500 mt-1">
                 Максимальный балл: 2
               </p>
             </div>
@@ -132,23 +138,13 @@ export default function HomePage() {
           <h2 className="text-2xl font-semibold text-blue-800 mb-4">
             Награждение
           </h2>
-          <div className="grid md:grid-cols-2 gap-6 text-gray-700">
-            <div>
-              <h3 className="font-semibold mb-2">Командные награды:</h3>
-              <ul className="space-y-1 text-sm">
-                <li>• 1 место - освобождение от экзамена с оценкой "отлично"</li>
-                <li>• 2, 3 места - +1 балл к экзамену</li>
-                <li>• Победитель конкурса "Визитка" - +1 балл к экзамену</li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2">Специальные призы:</h3>
-              <ul className="space-y-1 text-sm">
-                <li>• Лучший видеоролик</li>
-                <li>• Лучшее владение практическими навыками</li>
-                <li>• Самый креативный вопрос в "Битве умов"</li>
-              </ul>
-            </div>
+          <div className="text-gray-700">
+            <h3 className="font-semibold mb-2">Командные награды:</h3>
+            <ul className="space-y-1 text-sm">
+              <li>• 1 место - освобождение от экзамена с оценкой "отлично"</li>
+              <li>• 2, 3 места - +1 балл к экзамену</li>
+              <li>• Победитель конкурса "Визитка" - +1 балл к экзамену</li>
+            </ul>
           </div>
         </div>
       </div>

@@ -13,11 +13,31 @@ export interface Contest {
   timeLimit?: number;
 }
 
+export interface JuryMember {
+  id: string;
+  name: string;
+  title: string;
+  isActive: boolean;
+}
+
 export interface TeamScore {
   teamId: string;
   contestId: string;
+  juryId: string;
   score: number;
   details?: any;
+  completedAt?: Date;
+}
+
+export interface AggregatedScore {
+  teamId: string;
+  contestId: string;
+  averageScore: number;
+  juryScores: {
+    juryId: string;
+    juryName: string;
+    score: number;
+  }[];
   completedAt?: Date;
 }
 

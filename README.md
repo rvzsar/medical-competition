@@ -1,36 +1,145 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Медицинская олимпиада по акушерству и гинекологии
 
-## Getting Started
+Система для оценки конкурсов на медицинской олимпиаде по акушерству и гинекологии, разработанная для развертывания на Vercel.
 
-First, run the development server:
+## Функциональность
+
+### Основные страницы:
+- **Главная страница** - информация об олимпиаде и навигация
+- **Панель жюри** - управление командами и доступ к оценке конкурсов
+- **Результаты** - просмотр текущих результатов и итоговой таблицы
+- **Конкурсы** - подробная информация о каждом конкурсе
+
+### Модули оценки конкурсов:
+
+#### I конкурс. Визитка
+- Устная презентация и/или видеоролик (до 3 минут)
+- Максимальный балл: 6
+- Критерии: целостность, культура выступления, творчество, оригинальность
+- Штрафы за превышение времени
+
+#### II конкурс. Клинический случай
+- Решение ситуационной задачи (10 минут)
+- Максимальный балл: 4 (+1 за досрочное выполнение)
+- Оценка правильности диагноза и качества объяснения
+
+#### III конкурс. Практические навыки
+- 4 станции по 12 баллов каждая (максимум 48 баллов)
+- Станции:
+  - Швы при кесаревом сечении
+  - Амбулаторный прием
+  - Акушерское пособие в родах
+  - Лапароскопический симулятор
+
+#### IV конкурс. Битва умов
+- Вопросы командам-соперникам
+- Максимальный балл: 2
+- Тематика: латинские термины, акушерство в искусстве, ученые
+
+#### VI конкурс. Вопрос от жюри
+- Дополнительные вопросы для спорных ситуаций
+- Максимальный балл: 2
+- Используется при необходимости определения призовых мест
+
+## Технологии
+
+- **Next.js 16** - React фреймворк с App Router
+- **TypeScript** - типизация
+- **Tailwind CSS** - стилизация
+- **Vercel** - хостинг и развертывание
+
+## Развертывание на Vercel
+
+### Автоматическое развертывание:
+
+1. Создайте репозиторий на GitHub
+2. Загрузите код проекта в репозиторий
+3. Подключите репозиторий к Vercel
+4. Vercel автоматически определит Next.js проект и развернет его
+
+### Ручное развертывание через Vercel CLI:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Установите Vercel CLI
+npm install -g vercel
+
+# В директории проекта выполните
+vercel
+
+# Следуйте инструкциям для развертывания
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Настройки Vercel:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Проект уже содержит файл `vercel.json` с необходимыми настройками:
+- Автоматическое определение Next.js фреймворка
+- Оптимизация для регионов Европы
+- Правильная конфигурация сборки
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Использование системы
 
-## Learn More
+### 1. Управление командами:
 
-To learn more about Next.js, take a look at the following resources:
+1. Перейдите в **Панель жюри** (`/admin`)
+2. В разделе "Управление командами" добавьте команды:
+   - Введите название команды
+   - Перечислите участников через запятую
+   - Нажмите "Добавить команду"
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 2. Оценка конкурсов:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. В **Панели жюри** выберите нужный конкурс
+2. Выберите команду из списка
+3. Заполните форму оценки согласно критериям
+4. Сохраните результаты
 
-## Deploy on Vercel
+### 3. Просмотр результатов:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Перейдите на страницу **Результаты** (`/results`)
+2. Просмотрите общую таблицу с местами
+3. Изучите детальные результаты по каждому конкурсу
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Структура проекта
+
+```
+medical-competition/
+├── src/
+│   ├── app/
+│   │   ├── admin/
+│   │   │   └── contest/
+│   │   │       ├── visit-card/
+│   │   │       ├── clinical-case/
+│   │   │       ├── practical-skills/
+│   │   │       ├── mind-battle/
+│   │   │       └── jury-question/
+│   │   ├── contests/
+│   │   ├── results/
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   └── types/
+│       └── index.ts
+├── public/
+├── vercel.json
+├── package.json
+└── README.md
+```
+
+## Особенности системы
+
+- **Адаптивный дизайн** - работает на всех устройствах
+- **Интуитивный интерфейс** - простота использования для жюри
+- **Автоматический подсчет баллов** - минимизация ошибок
+- **Визуализация результатов** - понятное представление данных
+- **Соответствие требованиям** - полная реализация критериев оценки
+
+## Поддержка
+
+При возникновении вопросов или проблем:
+1. Проверьте консоль браузера на наличие ошибок
+2. Убедитесь, что все зависимости установлены (`npm install`)
+3. Проверьте настройки Vercel при развертывании
+
+## Лицензия
+
+Проект разработан для образовательных целей проведения медицинской олимпиады.
