@@ -73,10 +73,10 @@ if (fs.existsSync(redisStoragePath)) {
   });
   
 } else {
-  console.log('❌ Файл kvStorage.ts не найден');
+  console.log('❌ Файл redisStorage.ts не найден');
 }
 
-console.log('\n📁 Проверка API route для KV...');
+console.log('\n📁 Проверка API route для Redis...');
 
 if (fs.existsSync(apiRoutePath)) {
   console.log('✅ Файл API route найден');
@@ -90,8 +90,8 @@ if (fs.existsSync(apiRoutePath)) {
     console.log('❌ Импорт Redis функций в API route отсутствует');
   }
   
-  // Проверка использования KV функций
-  const kvFunctionsInAPI = [
+  // Проверка использования Redis функций
+  const redisFunctionsInAPI = [
     'getTeams()',
     'getTeamScores()',
     'getAggregatedScores()',
@@ -105,7 +105,7 @@ if (fs.existsSync(apiRoutePath)) {
   ];
   
   console.log('\n🔧 Проверка использования Redis функций в API:');
-  kvFunctionsInAPI.forEach(func => {
+  redisFunctionsInAPI.forEach(func => {
     if (apiRouteContent.includes(func)) {
       console.log(`✅ ${func} - используется`);
     } else {
@@ -117,8 +117,8 @@ if (fs.existsSync(apiRoutePath)) {
   console.log('❌ Файл API route не найден');
 }
 
-// Проверка package.json для redis
-const packageJsonPath = path.join(__dirname, '../../../../package.json');
+// Проверка package.json для redis (Windows путь)
+const packageJsonPath = path.join(__dirname, '../../../package.json');
 console.log('\n📦 Проверка зависимостей...');
 
 if (fs.existsSync(packageJsonPath)) {
@@ -134,8 +134,8 @@ if (fs.existsSync(packageJsonPath)) {
   console.log('❌ package.json не найден');
 }
 
-// Проверка документации
-const redisSetupPath = path.join(__dirname, '../../../../REDIS_SETUP.md');
+// Проверка документации (Windows путь)
+const redisSetupPath = path.join(__dirname, '../../../REDIS_SETUP.md');
 console.log('\n📚 Проверка документации...');
 
 if (fs.existsSync(redisSetupPath)) {
