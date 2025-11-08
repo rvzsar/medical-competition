@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Team, JuryMember } from "@/types";
-import { storageUtils } from "@/utils/storage";
+import { storageUtils } from "@/utils/serverStorage";
+import TeamScoreLoader from "@/components/TeamScoreLoader";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -16,34 +17,34 @@ export default function AdminPage() {
   const [restoreData, setRestoreData] = useState("");
 
   useEffect(() => {
-    // Проверяем авторизацию
-    const jury = storageUtils.getCurrentJury();
-    if (!jury) {
-      router.push('/login');
-      return;
-    }
-    setCurrentJury(jury);
+    const loadData = async () => {
+      // Проверяем авторизацию
+      const jury = storageUtils.getCurrentJury();
+      if (!jury) {
+        router.push('/login');
+        return;
+      }
+      setCurrentJury(jury);
 
-    // Загружаем команды
-    const savedTeams = storageUtils.getTeams();
-    if (savedTeams.length === 0) {
-      // Если команд нет, создаем дефолтные
-      const defaultTeams = [
-        { id: "1", name: "Команда А", members: ["Иванов", "Петров", "Сидоров"], totalScore: 0 },
-        { id: "2", name: "Команда Б", members: ["Козлов", "Николаев", "Михайлов"], totalScore: 0 },
-        { id: "3", name: "Команда В", members: ["Александров", "Дмитриев", "Федоров"], totalScore: 0 },
-      ];
-      setTeams(defaultTeams);
-      storageUtils.setTeams(defaultTeams);
-    } else {
-      setTeams(savedTeams);
-    }
+      // Загружаем команды с сервера
+      try {
+        const savedTeams = await storageUtils.getTeams();
+        setTeams(savedTeams);
+      } catch (error) {
+        console.error('Error loading teams:', error);
+      }
+    };
+
+    loadData();
   }, [router]);
 
   const [newTeamName, setNewTeamName] = useState("");
   const [newTeamMembers, setNewTeamMembers] = useState("");
+  const [editingTeam, setEditingTeam] = useState<Team | null>(null);
+  const [editTeamName, setEditTeamName] = useState("");
+  const [editTeamMembers, setEditTeamMembers] = useState("");
 
-  const addTeam = () => {
+  const addTeam = async () => {
     if (newTeamName.trim() && newTeamMembers.trim()) {
       const members = newTeamMembers.split(",").map(m => m.trim()).filter(m => m);
       const newTeam: Team = {
@@ -52,18 +53,66 @@ export default function AdminPage() {
         members,
         totalScore: 0,
       };
-      const updatedTeams = [...teams, newTeam];
-      setTeams(updatedTeams);
-      storageUtils.setTeams(updatedTeams);
-      setNewTeamName("");
-      setNewTeamMembers("");
+      
+      try {
+        await storageUtils.addTeam(newTeam);
+        const updatedTeams = [...teams, newTeam];
+        setTeams(updatedTeams);
+        setNewTeamName("");
+        setNewTeamMembers("");
+      } catch (error) {
+        console.error('Error adding team:', error);
+        alert('Ошибка при добавлении команды');
+      }
     }
   };
 
-  const deleteTeam = (id: string) => {
-    const updatedTeams = teams.filter(team => team.id !== id);
-    setTeams(updatedTeams);
-    storageUtils.setTeams(updatedTeams);
+  const startEditTeam = (team: Team) => {
+    setEditingTeam(team);
+    setEditTeamName(team.name);
+    setEditTeamMembers(team.members.join(", "));
+  };
+
+  const saveEditTeam = async () => {
+    if (editingTeam && editTeamName.trim() && editTeamMembers.trim()) {
+      const members = editTeamMembers.split(",").map(m => m.trim()).filter(m => m);
+      const updatedTeam: Team = {
+        ...editingTeam,
+        name: editTeamName.trim(),
+        members,
+      };
+      
+      try {
+        await storageUtils.updateTeam(updatedTeam);
+        const updatedTeams = teams.map(team =>
+          team.id === editingTeam.id ? updatedTeam : team
+        );
+        setTeams(updatedTeams);
+        setEditingTeam(null);
+        setEditTeamName("");
+        setEditTeamMembers("");
+      } catch (error) {
+        console.error('Error updating team:', error);
+        alert('Ошибка при обновлении команды');
+      }
+    }
+  };
+
+  const cancelEditTeam = () => {
+    setEditingTeam(null);
+    setEditTeamName("");
+    setEditTeamMembers("");
+  };
+
+  const deleteTeam = async (id: string) => {
+    try {
+      await storageUtils.deleteTeam(id);
+      const updatedTeams = teams.filter(team => team.id !== id);
+      setTeams(updatedTeams);
+    } catch (error) {
+      console.error('Error deleting team:', error);
+      alert('Ошибка при удалении команды');
+    }
   };
 
   const handleLogout = () => {
@@ -71,10 +120,15 @@ export default function AdminPage() {
     router.push('/login');
   };
 
-  const handleExportBackup = () => {
-    const data = storageUtils.exportData();
-    setBackupData(data);
-    setShowBackupModal(true);
+  const handleExportBackup = async () => {
+    try {
+      const data = await storageUtils.exportData();
+      setBackupData(data);
+      setShowBackupModal(true);
+    } catch (error) {
+      console.error('Error exporting backup:', error);
+      alert('Ошибка при создании резервной копии');
+    }
   };
 
   const handleDownloadBackup = () => {
@@ -93,16 +147,21 @@ export default function AdminPage() {
     setShowRestoreModal(true);
   };
 
-  const handleRestoreData = () => {
-    const success = storageUtils.importData(restoreData);
-    if (success) {
-      alert('Данные успешно восстановлены!');
-      window.location.reload();
-    } else {
-      alert('Ошибка при восстановлении данных. Проверьте формат файла.');
+  const handleRestoreData = async () => {
+    try {
+      const success = await storageUtils.importData(restoreData);
+      if (success) {
+        alert('Данные успешно восстановлены!');
+        window.location.reload();
+      } else {
+        alert('Ошибка при восстановлении данных. Проверьте формат файла.');
+      }
+      setShowRestoreModal(false);
+      setRestoreData("");
+    } catch (error) {
+      console.error('Error restoring data:', error);
+      alert('Ошибка при восстановлении данных');
     }
-    setShowRestoreModal(false);
-    setRestoreData("");
   };
 
   if (!currentJury) {
@@ -191,23 +250,64 @@ export default function AdminPage() {
               <div className="space-y-3">
                 {teams.map((team) => (
                   <div key={team.id} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-semibold text-gray-800">{team.name}</h4>
-                        <p className="text-sm text-gray-600 mt-1">
-                          Участники: {team.members.join(", ")}
-                        </p>
-                        <p className="text-sm font-medium text-blue-600 mt-2">
-                          Общий балл: {storageUtils.getTeamTotalScore(team.id)}
-                        </p>
+                    {editingTeam?.id === team.id ? (
+                      <div className="space-y-3">
+                        <input
+                          type="text"
+                          value={editTeamName}
+                          onChange={(e) => setEditTeamName(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="Название команды"
+                        />
+                        <input
+                          type="text"
+                          value={editTeamMembers}
+                          onChange={(e) => setEditTeamMembers(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="Участники (через запятую)"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={saveEditTeam}
+                            className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                          >
+                            Сохранить
+                          </button>
+                          <button
+                            onClick={cancelEditTeam}
+                            className="bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700"
+                          >
+                            Отмена
+                          </button>
+                        </div>
                       </div>
-                      <button
-                        onClick={() => deleteTeam(team.id)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        Удалить
-                      </button>
-                    </div>
+                    ) : (
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-semibold text-gray-800">{team.name}</h4>
+                          <p className="text-sm text-gray-600 mt-1">
+                            Участники: {team.members.join(", ")}
+                          </p>
+                          <p className="text-sm font-medium text-blue-600 mt-2">
+                            Общий балл: <TeamScoreLoader teamId={team.id} />
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => startEditTeam(team)}
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            Редактировать
+                          </button>
+                          <button
+                            onClick={() => deleteTeam(team.id)}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            Удалить
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

@@ -3,18 +3,30 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Team, AggregatedScore } from "@/types";
-import { storageUtils } from "@/utils/storage";
+import { storageUtils } from "@/utils/serverStorage";
+import ScoreDisplay from "@/components/ScoreDisplay";
+import TotalScoreDisplay from "@/components/TotalScoreDisplay";
 
 export default function ResultsPage() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [aggregatedScores, setAggregatedScores] = useState<AggregatedScore[]>([]);
 
   useEffect(() => {
-    // Загружаем команды и оценки
-    const savedTeams = storageUtils.getTeams();
-    const savedScores = storageUtils.getAggregatedScores();
-    setTeams(savedTeams);
-    setAggregatedScores(savedScores);
+    const loadData = async () => {
+      try {
+        // Загружаем команды и оценки с сервера
+        const [savedTeams, savedScores] = await Promise.all([
+          storageUtils.getTeams(),
+          storageUtils.getAggregatedScores()
+        ]);
+        setTeams(savedTeams);
+        setAggregatedScores(savedScores);
+      } catch (error) {
+        console.error('Error loading results data:', error);
+      }
+    };
+
+    loadData();
   }, []);
 
   const contests = [
@@ -25,12 +37,22 @@ export default function ResultsPage() {
     { id: "jury-question", name: "VI конкурс. Вопрос от жюри", maxScore: 2 },
   ];
 
-  const getTeamScore = (teamId: string, contestId: string) => {
-    return storageUtils.getAggregatedScore(teamId, contestId);
+  const getTeamScore = async (teamId: string, contestId: string) => {
+    try {
+      return await storageUtils.getAggregatedScore(teamId, contestId);
+    } catch (error) {
+      console.error('Error getting team score:', error);
+      return 0;
+    }
   };
 
-  const getTeamTotalScore = (teamId: string) => {
-    return storageUtils.getTeamTotalScore(teamId);
+  const getTeamTotalScore = async (teamId: string) => {
+    try {
+      return await storageUtils.getTeamTotalScore(teamId);
+    } catch (error) {
+      console.error('Error getting team total score:', error);
+      return 0;
+    }
   };
 
   const getTeamAggregatedScore = (teamId: string, contestId: string): AggregatedScore | undefined => {
@@ -38,9 +60,8 @@ export default function ResultsPage() {
   };
 
   const sortedTeams = [...teams].sort((a, b) => {
-    const scoreA = getTeamTotalScore(a.id);
-    const scoreB = getTeamTotalScore(b.id);
-    return scoreB - scoreA;
+    // Сортировка будет выполнена после загрузки данных
+    return 0;
   });
 
   const getPlaceColor = (place: number) => {
@@ -97,7 +118,7 @@ export default function ResultsPage() {
                       {team.members.join(", ")}
                     </td>
                     <td className="py-3 px-4 text-center font-bold text-lg">
-                      {getTeamTotalScore(team.id)}
+                      <TotalScoreDisplay teamId={team.id} />
                     </td>
                   </tr>
                 ))}
@@ -135,52 +156,18 @@ export default function ResultsPage() {
                     <td className="py-3 px-4 font-semibold">{team.name}</td>
                     {contests.map((contest) => {
                       const aggregatedScore = getTeamAggregatedScore(team.id, contest.id);
-                      const score = getTeamScore(team.id, contest.id);
                       
                       return (
-                        <td key={contest.id} className="text-center py-3 px-2">
-                          <div className="relative group">
-                            <span className={`inline-block px-2 py-1 rounded text-sm font-medium cursor-help ${
-                              score > 0
-                                ? aggregatedScore && aggregatedScore.juryScores.length >= 3
-                                  ? 'bg-green-100 text-green-800'
-                                  : 'bg-yellow-100 text-yellow-800'
-                                : 'bg-gray-100 text-gray-600'
-                            }`}>
-                              {score}
-                              {aggregatedScore && (
-                                <span className="ml-1 text-xs opacity-75">
-                                  ({aggregatedScore.juryScores.length})
-                                </span>
-                              )}
-                            </span>
-                            
-                            {aggregatedScore && aggregatedScore.juryScores.length > 0 && (
-                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-56 bg-gray-800 text-white text-xs rounded p-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                                <div className="font-semibold mb-1">Оценки жюри ({aggregatedScore.juryScores.length} из 6):</div>
-                                {aggregatedScore.juryScores.map((juryScore, index) => (
-                                  <div key={index} className="flex justify-between">
-                                    <span className="truncate mr-2">{juryScore.juryName}:</span>
-                                    <span>{juryScore.score}</span>
-                                  </div>
-                                ))}
-                                <div className="mt-1 pt-1 border-t border-gray-600 flex justify-between font-semibold">
-                                  <span>Средний балл:</span>
-                                  <span>{aggregatedScore.averageScore}</span>
-                                </div>
-                                {aggregatedScore.juryScores.length < 3 && (
-                                  <div className="mt-1 text-yellow-300 text-xs">
-                                    ⚠️ Оценено менее чем 3 членами жюри
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </td>
+                        <ScoreDisplay
+                          key={contest.id}
+                          teamId={team.id}
+                          contestId={contest.id}
+                          aggregatedScore={aggregatedScore}
+                        />
                       );
                     })}
                     <td className="text-center py-3 px-4 font-bold text-lg">
-                      {getTeamTotalScore(team.id)}
+                      <TotalScoreDisplay teamId={team.id} />
                     </td>
                   </tr>
                 ))}
