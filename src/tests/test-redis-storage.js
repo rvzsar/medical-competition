@@ -118,7 +118,7 @@ if (fs.existsSync(apiRoutePath)) {
 }
 
 // Проверка package.json для redis (Windows путь)
-const packageJsonPath = path.join(__dirname, '../../../package.json');
+const packageJsonPath = path.join(__dirname, '../../../../package.json');
 console.log('\n📦 Проверка зависимостей...');
 
 if (fs.existsSync(packageJsonPath)) {
@@ -135,7 +135,7 @@ if (fs.existsSync(packageJsonPath)) {
 }
 
 // Проверка документации (Windows путь)
-const redisSetupPath = path.join(__dirname, '../../../REDIS_SETUP.md');
+const redisSetupPath = path.join(__dirname, '../../../../REDIS_SETUP.md');
 console.log('\n📚 Проверка документации...');
 
 if (fs.existsSync(redisSetupPath)) {
