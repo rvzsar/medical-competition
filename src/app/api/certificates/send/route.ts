@@ -118,19 +118,28 @@ async function sendCertificateEmail(options: {
   if (!from) {
     throw new Error('EMAIL_FROM or EMAIL_USER must be configured');
   }
+  try {
+    // Явно проверяем SMTP-подключение, чтобы в логах видеть причину отказа (TLS, аутентификация и т.п.)
+    await transporter.verify();
 
-  await transporter.sendMail({
-    from,
-    to: options.to,
-    subject: 'Сертификат участника - Олимпиада по акушерству и гинекологии',
-    html: options.html,
-    attachments: [
-      {
-        filename: options.filename,
-        content: options.pdfBuffer,
-      },
-    ],
-  });
+    await transporter.sendMail({
+      from,
+      to: options.to,
+      subject: 'Сертификат участника - Олимпиада по акушерству и гинекологии',
+      html: options.html,
+      attachments: [
+        {
+          filename: options.filename,
+          content: options.pdfBuffer,
+        },
+      ],
+    });
+  } catch (err) {
+    console.error('SMTP send error:', err);
+    // Пробрасываем только безопасное сообщение наружу
+    const msg = err instanceof Error ? err.message : 'SMTP error';
+    throw new Error(`SMTP send failed: ${msg}`);
+  }
 }
 
 // Отправка одного сертификата
