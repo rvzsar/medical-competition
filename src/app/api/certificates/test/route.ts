@@ -1,8 +1,12 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getAggregatedScores, getTeams } from '@/utils/redisStorage';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const authCookie = request.cookies.get('jury_id');
+    if (!authCookie?.value) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
     const teams = await getTeams();
     const scores = await getAggregatedScores();
 

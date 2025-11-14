@@ -1,6 +1,7 @@
 import { createClient, RedisClientType } from 'redis';
 import { Team, TeamScore, AggregatedScore, JuryMember } from '@/types';
 import { CertificateTemplatesConfig } from '@/types/certificate';
+import { JURY_MEMBERS } from '@/config/juryMembers';
 
 // Ключи для хранения данных в Redis
 const KEYS = {
@@ -12,15 +13,8 @@ const KEYS = {
   SCORES_LOCK: 'medical-competition:scores-lock',
 };
 
-// Члены жюри (константы)
-const juryMembers: JuryMember[] = [
-  { id: "1", name: "Завалко Александр Федорович", title: "", isActive: true },
-  { id: "2", name: "Столяров Сергей Анатольевич", title: "", isActive: true },
-  { id: "3", name: "Портянникова Наталия Петровна", title: "", isActive: true },
-  { id: "4", name: "Никаноров Владимир Николаевич", title: "", isActive: true },
-  { id: "5", name: "Ишутов Игорь Валерьевич", title: "", isActive: true },
-  { id: "6", name: "Асеева Елена Владимировна", title: "", isActive: true },
-];
+// Члены жюри (общая конфигурация)
+const juryMembers: JuryMember[] = JURY_MEMBERS;
 
 // Создание Redis клиента
 let redisClient: RedisClientType | null = null;

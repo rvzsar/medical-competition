@@ -128,7 +128,18 @@ export const serverStorageUtils = {
         },
         body: JSON.stringify({ type: 'addTeamScore', data: score }),
       });
-      if (!response.ok) throw new Error('Failed to add team score');
+      if (!response.ok) {
+        let message = 'Failed to add team score';
+        try {
+          const data = await response.json();
+          if (data && typeof data === 'object' && 'error' in data && data.error) {
+            message = String(data.error);
+          }
+        } catch {
+          // ignore JSON parse errors
+        }
+        throw new Error(message);
+      }
       
       // Проверяем, что данные сохранились корректно
       await this.verifyDataIntegrity(score);

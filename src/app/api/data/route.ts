@@ -71,8 +71,17 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, data: scoresResult });
       
       case 'addTeamScore':
-        const addScoreResult = await addTeamScore(data);
-        return NextResponse.json({ success: true, data: addScoreResult });
+        {
+          const lockStateForAdd = await getScoresLockStatus();
+          if (lockStateForAdd.locked) {
+            return NextResponse.json(
+              { error: 'Изменение оценок заблокировано организатором' },
+              { status: 423 },
+            );
+          }
+          const addScoreResult = await addTeamScore(data);
+          return NextResponse.json({ success: true, data: addScoreResult });
+        }
       
       case 'addTeam':
         const addTeamResult = await addTeam(data);

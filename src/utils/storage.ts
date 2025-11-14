@@ -1,4 +1,5 @@
 import { JuryMember, TeamScore, AggregatedScore, Team } from "@/types";
+import { JURY_MEMBERS } from "@/config/juryMembers";
 
 type ScoreBackup = TeamScore & {
   timestamp: number;
@@ -213,14 +214,7 @@ export const storageUtils = {
   updateAggregatedScores(): void {
     const teamScores = this.getTeamScores();
     const teams = this.getTeams();
-    const juryMembers: JuryMember[] = [
-      { id: "1", name: "Завалко Александр Федорович", title: "", isActive: true },
-      { id: "2", name: "Столяров Сергей Анатольевич", title: "", isActive: true },
-      { id: "3", name: "Портянникова Наталия Петровна", title: "", isActive: true },
-      { id: "4", name: "Никаноров Владимир Николаевич", title: "", isActive: true },
-      { id: "5", name: "Ишутов Игорь Валерьевич", title: "", isActive: true },
-      { id: "6", name: "Асеева Елена Владимировна", title: "", isActive: true },
-    ];
+    const juryMembers: JuryMember[] = JURY_MEMBERS;
 
     const aggregatedScores: AggregatedScore[] = [];
 

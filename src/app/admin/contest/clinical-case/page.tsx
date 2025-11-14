@@ -115,7 +115,11 @@ export default function ClinicalCaseContestPage() {
       setHasUnsavedChanges(false);
     } catch (error) {
       console.error('Error saving score:', error);
-      alert('Ошибка при сохранении оценки. Попробуйте еще раз.');
+      const message =
+        error instanceof Error && error.message.includes('заблокировано')
+          ? 'Изменение оценок заблокировано организатором. Баллы редактировать нельзя.'
+          : 'Ошибка при сохранении оценки. Попробуйте еще раз.';
+      alert(message);
     }
   };
 
