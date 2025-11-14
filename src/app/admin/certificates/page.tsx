@@ -132,6 +132,54 @@ export default function CertificatesPage() {
     }
   };
 
+  const handleTestSendCertificate = async () => {
+    // Простейшая защита: не даем отправлять тест без явного email и команды
+    if (!selectedTeam || !participantEmail) {
+      setMessage({ type: 'error', text: 'Для тестовой отправки выберите команду и укажите email' });
+      return;
+    }
+
+    // Небольшая валидация email на стороне клиента, чтобы не улетали мусорные адреса
+    const emailTrimmed = participantEmail.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed)) {
+      setMessage({ type: 'error', text: 'Похоже, email указан с ошибкой' });
+      return;
+    }
+
+    setSending(true);
+    try {
+      const response = await fetch('/api/certificates/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: certificateType,
+          teamId: selectedTeam,
+          participantName:
+            certificateType === 'individual'
+              ? participantName || 'Тестовая отправка'
+              : undefined,
+          participantEmail: emailTrimmed,
+          specialAward: 'ТЕСТОВОЕ ПИСЬМО (сертификат не предназначен для печати)',
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setMessage({
+          type: 'success',
+          text: 'Тестовое письмо отправлено. Проверьте почту (и папку "Спам").',
+        });
+      } else {
+        setMessage({ type: 'error', text: result.error || 'Ошибка тестовой отправки' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Ошибка при тестовой отправке сертификата' });
+    } finally {
+      setSending(false);
+    }
+  };
+
   const addToBulk = () => {
     if (!selectedTeam || !participantEmail) {
       setMessage({ type: 'error', text: 'Заполните все обязательные поля' });
@@ -350,13 +398,23 @@ export default function CertificatesPage() {
             </button>
 
             {!bulkMode ? (
-              <button
-                onClick={handleSendCertificate}
-                disabled={sending}
-                className="flex-1 bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition disabled:bg-gray-400"
-              >
-                {sending ? 'Отправка...' : '📧 Отправить на Email'}
-              </button>
+              <div className="flex-1 flex flex-col gap-2">
+                <button
+                  onClick={handleSendCertificate}
+                  disabled={sending}
+                  className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition disabled:bg-gray-400"
+                >
+                  {sending ? 'Отправка...' : '📧 Отправить на Email'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleTestSendCertificate}
+                  disabled={sending}
+                  className="w-full bg-gray-100 text-gray-800 py-2 rounded-lg text-sm border border-gray-300 hover:bg-gray-200 transition disabled:bg-gray-200 disabled:text-gray-500"
+                >
+                  {sending ? 'Тест...' : '🔐 Тестовая отправка (только на этот email)'}
+                </button>
+              </div>
             ) : (
               <button
                 onClick={addToBulk}
