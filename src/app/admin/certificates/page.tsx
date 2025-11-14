@@ -583,8 +583,12 @@ export default function CertificatesPage() {
           <div className="bg-white rounded-2xl shadow-xl p-8 mt-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold text-gray-800">Настройки текстов сертификатов</h2>
-              <span className="text-sm text-gray-500">
-                Можно использовать переменные: {'{'}{'{'}recipientName{'}'}{'}'}, {'{'}{'{'}teamName{'}'}{'}'}, {'{'}{'{'}eventName{'}'}{'}'}, {'{'}{'{'}place{'}'}{'}'}, {'{'}{'{'}score{'}'}{'}'}, {'{'}{'{'}specialAward{'}'}{'}'}, {'{'}{'{'}organizerName{'}'}{'}'}, {'{'}{'{'}organizerTitle{'}'}{'}'}
+              <span className="text-sm text-gray-500 text-right">
+                Куски вида {'{'}{'{'}...{'}'}{'}'} заполняются автоматически. Можно их просто оставить
+                в тексте: {'{'}{'{'}recipientName{'}'}{'}'} – ФИО участника, {'{'}{'{'}teamName{'}'}{'}'} – команда,
+                {'{'}{'{'}eventName{'}'}{'}'} – название олимпиады, {'{'}{'{'}place{'}'}{'}'} – место,
+                {'{'}{'{'}score{'}'}{'}'} – балл, {'{'}{'{'}specialAward{'}'}{'}'} – спецприз,
+                {'{'}{'{'}organizerName{'}'}{'}'} – ФИО организатора, {'{'}{'{'}organizerTitle{'}'}{'}'} – должность.
               </span>
             </div>
 

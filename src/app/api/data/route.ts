@@ -4,7 +4,6 @@ import {
   getTeams,
   getTeamScores,
   getAggregatedScores,
-  getJuryMembers,
   addTeamScore,
   addTeam,
   updateTeam,
@@ -33,10 +32,7 @@ export async function GET(request: NextRequest) {
       
       case 'aggregatedScores':
         return NextResponse.json(await getAggregatedScores());
-      
-      case 'juryMembers':
-        return NextResponse.json(await getJuryMembers());
-      
+
       case 'all':
         return NextResponse.json(await getAllData());
       
@@ -66,9 +62,17 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, data: teamsResult });
       
       case 'teamScores':
-        // Прямое обновление всех оценок
-        const scoresResult = await updateAllTeamScores(data);
-        return NextResponse.json({ success: true, data: scoresResult });
+        {
+          const lockStateForBulk = await getScoresLockStatus();
+          if (lockStateForBulk.locked) {
+            return NextResponse.json(
+              { error: 'Изменение оценок заблокировано организатором' },
+              { status: 423 },
+            );
+          }
+          const scoresResult = await updateAllTeamScores(data);
+          return NextResponse.json({ success: true, data: scoresResult });
+        }
       
       case 'addTeamScore':
         {
@@ -100,23 +104,42 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, data: backupResult });
       
       case 'restore':
-        const restoreResult = await restoreData(data.backupKey);
-        return NextResponse.json({ success: true, data: restoreResult });
+        {
+          const lockStateForRestore = await getScoresLockStatus();
+          if (lockStateForRestore.locked) {
+            return NextResponse.json(
+              { error: 'Восстановление данных с оценками заблокировано организатором' },
+              { status: 423 },
+            );
+          }
+          const restoreResult = await restoreData(data.backupKey);
+          return NextResponse.json({ success: true, data: restoreResult });
+        }
 
       case 'setScoresLock':
         if (typeof data?.locked !== 'boolean') {
           return NextResponse.json({ error: 'locked flag is required' }, { status: 400 });
         }
-        // jury_id из cookie в authCookie уже проверен выше
-        const lockState = await setScoresLocked(data.locked, authCookie.value);
-        return NextResponse.json({ success: true, data: lockState });
+        {
+          const lockState = await setScoresLocked(data.locked, authCookie.value);
+          return NextResponse.json({ success: true, data: lockState });
+        }
 
       case 'clearJuryScores':
         if (!data?.juryId) {
           return NextResponse.json({ error: 'juryId is required' }, { status: 400 });
         }
-        const clearedJuryScores = await clearJuryScores(data.juryId, data.contestId);
-        return NextResponse.json({ success: true, data: clearedJuryScores });
+        {
+          const lockStateForClear = await getScoresLockStatus();
+          if (lockStateForClear.locked) {
+            return NextResponse.json(
+              { error: 'Сброс оценок заблокирован организатором' },
+              { status: 423 },
+            );
+          }
+          const clearedJuryScores = await clearJuryScores(data.juryId, data.contestId);
+          return NextResponse.json({ success: true, data: clearedJuryScores });
+        }
       
       default:
         return NextResponse.json({ error: 'Invalid type parameter' }, { status: 400 });
@@ -140,8 +163,17 @@ export async function DELETE(request: NextRequest) {
     switch (type) {
       case 'teamScores':
         // Удаляем все оценки (для сброса данных)
-        const result = await clearAllScores();
-        return NextResponse.json({ success: true, data: result });
+        {
+          const lockStateForDelete = await getScoresLockStatus();
+          if (lockStateForDelete.locked) {
+            return NextResponse.json(
+              { error: 'Сброс всех оценок заблокирован организатором' },
+              { status: 423 },
+            );
+          }
+          const result = await clearAllScores();
+          return NextResponse.json({ success: true, data: result });
+        }
       
       default:
         return NextResponse.json({ error: 'Invalid type parameter' }, { status: 400 });

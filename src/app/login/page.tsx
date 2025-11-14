@@ -10,12 +10,18 @@ export default function LoginPage() {
   const router = useRouter();
   const [selectedJury, setSelectedJury] = useState<string>("");
   const [error, setError] = useState<string>("");
+  const [accessPin, setAccessPin] = useState<string>("");
 
   const juryMembers: JuryMember[] = JURY_MEMBERS;
 
   const handleLogin = async () => {
     if (!selectedJury) {
       setError("Пожалуйста, выберите члена жюри");
+      return;
+    }
+
+    if (!accessPin.trim()) {
+      setError("Введите PIN доступа, который вы получили от организаторов");
       return;
     }
 
@@ -32,11 +38,13 @@ export default function LoginPage() {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ juryId: jury.id }),
+        body: JSON.stringify({ juryId: jury.id, accessPin: accessPin.trim() }),
       });
 
-      if (!response.ok) {
-        setError('Ошибка при создании сессии. Попробуйте еще раз.');
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok || !result.success) {
+        setError(result.error || 'Неверный PIN или ошибка при создании сессии');
         return;
       }
 
@@ -79,6 +87,22 @@ export default function LoginPage() {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              PIN доступа для жюри
+            </label>
+            <input
+              type="password"
+              value={accessPin}
+              onChange={(e) => {
+                setAccessPin(e.target.value);
+                setError("");
+              }}
+              placeholder="Введите PIN, выданный организаторами"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
 
           {selectedJury && (
