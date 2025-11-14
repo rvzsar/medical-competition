@@ -208,6 +208,7 @@ export default function JuryQuestionContestPage() {
                 </div>
                 <p className="text-sm text-blue-600 mt-2">Оценивает: {currentJury.name}</p>
               </div>
+            </div>
             <div className="flex flex-col items-end gap-2">
               <button
                 onClick={handleResetMyScores}
@@ -215,11 +216,13 @@ export default function JuryQuestionContestPage() {
               >
                 🔄 Сбросить мои оценки
               </button>
-              <Link href="/admin" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">
+              <Link
+                href="/admin"
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm"
+              >
                 Назад к панели жюри
               </Link>
             </div>
-            </Link>
           </div>
         </header>
 
