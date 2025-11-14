@@ -11,6 +11,7 @@ const KEYS = {
   JURY_MEMBERS: 'medical-competition:jury-members',
   CERTIFICATE_TEMPLATES: 'medical-competition:certificate-templates',
   SCORES_LOCK: 'medical-competition:scores-lock',
+  SCORES_LOG: 'medical-competition:scores-log',
 };
 
 // Члены жюри (общая конфигурация)
@@ -171,11 +172,11 @@ export async function addTeamScore(score: TeamScore) {
   const client = await getRedisClient();
   const teamScores = await getTeamScores();
   const existingIndex = teamScores.findIndex(
-    s => s.teamId === score.teamId && 
-         s.contestId === score.contestId && 
-         s.juryId === score.juryId
+    (s) => s.teamId === score.teamId && s.contestId === score.contestId && s.juryId === score.juryId,
   );
   
+  const previousScore = existingIndex >= 0 ? teamScores[existingIndex].score : null;
+
   if (existingIndex >= 0) {
     teamScores[existingIndex] = score;
   } else {
@@ -184,6 +185,7 @@ export async function addTeamScore(score: TeamScore) {
   
   await client.set(KEYS.TEAM_SCORES, JSON.stringify(teamScores));
   await updateAggregatedScores();
+  await appendScoreLogEntryForScoreChange(score, previousScore);
   
   return await getAllData();
 }
@@ -360,6 +362,61 @@ export async function setScoresLocked(locked: boolean, lockedBy: string | null):
 
 export async function getScoresLockStatus(): Promise<ScoresLockState> {
   return getScoresLockState();
+}
+
+export interface ScoreLogEntry {
+  timestamp: string;
+  juryId: string;
+  juryName: string;
+  teamId: string;
+  teamName: string;
+  contestId: string;
+  previousScore: number | null;
+  newScore: number;
+}
+
+async function appendScoreLogEntry(entry: ScoreLogEntry): Promise<void> {
+  const client = await getRedisClient();
+  await client.lPush(KEYS.SCORES_LOG, JSON.stringify(entry));
+  await client.lTrim(KEYS.SCORES_LOG, 0, 499);
+}
+
+async function appendScoreLogEntryForScoreChange(score: TeamScore, previousScore: number | null) {
+  try {
+    const teams = await getTeams();
+    const team = teams.find((t) => t.id === score.teamId);
+    const jury = juryMembers.find((j) => j.id === score.juryId);
+
+    const entry: ScoreLogEntry = {
+      timestamp: new Date().toISOString(),
+      juryId: score.juryId,
+      juryName: jury?.name || 'Неизвестный жюри',
+      teamId: score.teamId,
+      teamName: team?.name || 'Неизвестная команда',
+      contestId: score.contestId,
+      previousScore,
+      newScore: score.score,
+    };
+
+    await appendScoreLogEntry(entry);
+  } catch (error) {
+    console.warn('Не удалось записать протокол изменения оценки:', error);
+  }
+}
+
+export async function getScoreLog(limit = 100): Promise<ScoreLogEntry[]> {
+  const client = await getRedisClient();
+  const items = await client.lRange(KEYS.SCORES_LOG, 0, limit - 1);
+
+  return items
+    .map((raw) => {
+      try {
+        return JSON.parse(raw) as ScoreLogEntry;
+      } catch {
+        return null;
+      }
+    })
+    .filter((entry): entry is ScoreLogEntry => entry !== null);
 }
 
 // Закрытие соединения (для cleanup)

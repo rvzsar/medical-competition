@@ -466,6 +466,12 @@ export default function AdminPage() {
                 Посмотреть результаты
               </Link>
               <Link
+                href="/admin/protocol"
+                className="block w-full bg-slate-700 text-white px-4 py-3 rounded-lg text-center hover:bg-slate-800"
+              >
+                📑 Протокол оценок
+              </Link>
+              <Link
                 href="/admin/certificates"
                 className="block w-full bg-indigo-600 text-white px-4 py-3 rounded-lg text-center hover:bg-indigo-700"
               >
