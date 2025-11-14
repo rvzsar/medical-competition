@@ -128,16 +128,20 @@ async function sendCertificateEmail(options: {
       ],
     });
 
-    console.log('SMTP result:', {
+    const smtpInfo = {
       messageId: info.messageId,
       accepted: info.accepted,
       rejected: info.rejected,
       response: info.response,
-    });
+    };
+
+    console.log('SMTP result:', smtpInfo);
 
     if (!info.accepted || info.accepted.length === 0) {
       throw new Error('SMTP send failed: no recipients accepted');
     }
+
+    return smtpInfo;
   } catch (err) {
     console.error('SMTP send error:', err);
     const msg = err instanceof Error ? err.message : 'SMTP error';
@@ -211,12 +215,14 @@ async function sendSingleCertificate(request: SendCertificateRequest) {
     })
   );
 
-  await sendCertificateEmail({
+  const smtpInfo = await sendCertificateEmail({
     to: participantEmail,
     html: emailHtml,
     pdfBuffer,
     filename: `certificate-${type === 'team' ? team.name : participantName}.pdf`,
   });
+
+  return smtpInfo;
 }
 
 // POST: Отправка сертификата одному получателю
@@ -231,9 +237,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const smtpInfo = await sendSingleCertificate(body);
+
     return NextResponse.json({
       success: true,
       message: 'Сертификат успешно отправлен',
+      smtp: smtpInfo,
     });
 
   } catch (error) {
@@ -260,16 +269,17 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const results: Array<{ email: string; success: boolean }> = [];
+    const results: Array<{ email: string; success: boolean; smtp?: any }> = [];
     const errors = [];
 
     // Отправляем сертификаты последовательно
     for (const recipient of body.recipients) {
       try {
-        await sendSingleCertificate(recipient);
+        const smtpInfo = await sendSingleCertificate(recipient);
         results.push({
           email: recipient.participantEmail,
           success: true,
+          smtp: smtpInfo,
         });
       } catch (error) {
         errors.push({
