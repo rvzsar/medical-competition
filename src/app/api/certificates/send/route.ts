@@ -86,19 +86,15 @@ async function generateCertificatePDF(
 }
 
 function createTransporter() {
-  const host = process.env.EMAIL_HOST;
-  const port = process.env.EMAIL_PORT ? Number(process.env.EMAIL_PORT) : 587;
   const user = process.env.EMAIL_USER;
   const pass = process.env.EMAIL_PASS;
 
-  if (!host || !port || !user || !pass) {
-    throw new Error('EMAIL_HOST/EMAIL_PORT/EMAIL_USER/EMAIL_PASS must be configured');
+  if (!user || !pass) {
+    throw new Error('EMAIL_USER and EMAIL_PASS must be configured');
   }
 
   return nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
+    service: 'gmail',
     auth: {
       user,
       pass,
@@ -119,10 +115,7 @@ async function sendCertificateEmail(options: {
     throw new Error('EMAIL_FROM or EMAIL_USER must be configured');
   }
   try {
-    // Явно проверяем SMTP-подключение, чтобы в логах видеть причину отказа (TLS, аутентификация и т.п.)
-    await transporter.verify();
-
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from,
       to: options.to,
       subject: 'Сертификат участника - Олимпиада по акушерству и гинекологии',
@@ -134,9 +127,19 @@ async function sendCertificateEmail(options: {
         },
       ],
     });
+
+    console.log('SMTP result:', {
+      messageId: info.messageId,
+      accepted: info.accepted,
+      rejected: info.rejected,
+      response: info.response,
+    });
+
+    if (!info.accepted || info.accepted.length === 0) {
+      throw new Error('SMTP send failed: no recipients accepted');
+    }
   } catch (err) {
     console.error('SMTP send error:', err);
-    // Пробрасываем только безопасное сообщение наружу
     const msg = err instanceof Error ? err.message : 'SMTP error';
     throw new Error(`SMTP send failed: ${msg}`);
   }
