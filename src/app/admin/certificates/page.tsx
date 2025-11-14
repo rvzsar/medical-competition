@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Team } from '@/types';
 
 interface CertificateRecipient {
@@ -33,7 +34,7 @@ export default function CertificatesPage() {
 
   const loadTeams = async () => {
     try {
-      const response = await fetch('/api/teams');
+      const response = await fetch('/api/data?type=teams');
       if (response.ok) {
         const data = await response.json();
         setTeams(data);
@@ -209,12 +210,22 @@ export default function CertificatesPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-6">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            📜 Управление сертификатами
-          </h1>
-          <p className="text-gray-600">
-            Генерация и отправка сертификатов участникам олимпиады
-          </p>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-800 mb-2">
+                📜 Управление сертификатами
+              </h1>
+              <p className="text-gray-600">
+                Генерация и отправка сертификатов участникам олимпиады
+              </p>
+            </div>
+            <Link
+              href="/admin"
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+            >
+              ← Назад к админке
+            </Link>
+          </div>
         </div>
 
         {message && (

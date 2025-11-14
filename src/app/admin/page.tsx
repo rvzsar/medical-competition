@@ -361,12 +361,18 @@ export default function AdminPage() {
               </Link>
             </div>
 
-            <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="mt-6 pt-6 border-t border-gray-200 space-y-3">
               <Link
                 href="/results"
                 className="block w-full bg-gray-800 text-white px-4 py-3 rounded-lg text-center hover:bg-gray-900"
               >
                 Посмотреть результаты
+              </Link>
+              <Link
+                href="/admin/certificates"
+                className="block w-full bg-indigo-600 text-white px-4 py-3 rounded-lg text-center hover:bg-indigo-700"
+              >
+                📜 Сертификаты
               </Link>
             </div>
           </div>
