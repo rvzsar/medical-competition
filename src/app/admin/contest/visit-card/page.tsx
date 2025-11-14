@@ -150,6 +150,49 @@ export default function VisitCardContestPage() {
     return teamScores.filter(score => score.teamId === teamId).length;
   };
 
+  const handleResetMyScores = async () => {
+    if (!currentJury) return;
+    const confirmed = window.confirm('Вы уверены, что хотите сбросить ВСЕ ваши оценки по конкурсу "Визитка"?');
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch('/api/data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'clearJuryScores',
+          data: { juryId: currentJury.id, contestId: 'visit-card' },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to reset scores');
+      }
+
+      const updatedScores = await storageUtils.getTeamScores();
+      const visitCardScores = updatedScores.filter(score => score.contestId === 'visit-card');
+      setTeamScores(visitCardScores);
+      setScores({});
+      setSelectedTeam("");
+      setCurrentScore({
+        integrity: 0,
+        culture: 0,
+        creativity: 0,
+        originality: 0,
+        timePenalty: 0,
+      });
+      setIsEditing(false);
+      setHasUnsavedChanges(false);
+
+      alert('Все ваши оценки по этому конкурсу были сброшены.');
+    } catch (error) {
+      console.error('Error resetting scores:', error);
+      alert('Ошибка при сбросе оценок. Попробуйте еще раз.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -170,9 +213,17 @@ export default function VisitCardContestPage() {
                 <p className="text-sm text-blue-600 mt-1">Оценивает: {currentJury.name}</p>
               )}
             </div>
-            <Link href="/admin" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-              Назад к панели жюри
-            </Link>
+            <div className="flex flex-col items-end gap-2">
+              <button
+                onClick={handleResetMyScores}
+                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm"
+              >
+                🔄 Сбросить мои оценки
+              </button>
+              <Link href="/admin" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">
+                Назад к панели жюри
+              </Link>
+            </div>
           </div>
         </header>
 

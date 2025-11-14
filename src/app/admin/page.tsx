@@ -147,6 +147,27 @@ export default function AdminPage() {
     setShowRestoreModal(true);
   };
 
+  const handleResetAllScores = async () => {
+    const confirmed = window.confirm('Вы уверены, что хотите полностью сбросить ВСЕ оценки? Это действие невозможно отменить.');
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch('/api/data?type=teamScores', {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to reset scores');
+      }
+
+      alert('Все оценки успешно сброшены.');
+      window.location.reload();
+    } catch (error) {
+      console.error('Error resetting scores:', error);
+      alert('Ошибка при сбросе оценок. Попробуйте еще раз.');
+    }
+  };
+
   const handleRestoreData = async () => {
     try {
       const success = await storageUtils.importData(restoreData);
@@ -198,7 +219,7 @@ export default function AdminPage() {
             Для сохранности всех оценок рекомендуется регулярно создавать резервные копии.
             Это защитит данные от случайной потери при очистке браузера или технических сбоях.
           </p>
-          <div className="flex gap-4">
+          <div className="flex flex-wrap gap-4">
             <button
               onClick={handleExportBackup}
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -210,6 +231,12 @@ export default function AdminPage() {
               className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
             >
               📥 Восстановить из копии
+            </button>
+            <button
+              onClick={handleResetAllScores}
+              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+            >
+              🔄 Сбросить все оценки
             </button>
           </div>
         </div>

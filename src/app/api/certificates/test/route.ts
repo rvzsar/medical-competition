@@ -3,14 +3,13 @@ import { getAggregatedScores, getTeams } from '@/utils/redisStorage';
 
 export async function GET(request: NextRequest) {
   try {
-    // Проверка Redis подключения
     const teams = await getTeams();
     const scores = await getAggregatedScores();
 
-    // Проверка переменных окружения
     const envCheck = {
       redis: !!process.env.REDIS_URL,
-      resend: !!process.env.RESEND_API_KEY,
+      emailHost: !!process.env.EMAIL_HOST,
+      emailUser: !!process.env.EMAIL_USER,
       emailFrom: !!process.env.EMAIL_FROM,
     };
 
@@ -22,7 +21,7 @@ export async function GET(request: NextRequest) {
         scoresCount: scores.length,
         environmentVariables: envCheck,
       },
-      teams: teams,
+      teams,
     });
   } catch (error) {
     return NextResponse.json(

@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Resend } from 'resend';
 import React from 'react';
 import ReactPDF from '@react-pdf/renderer';
 import { render } from '@react-email/components';
+import nodemailer from 'nodemailer';
 import CertificateEmail from '@/emails/CertificateEmail';
 import { getAggregatedScores, getTeams } from '@/utils/redisStorage';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 interface SendCertificateRequest {
   type: 'team' | 'individual';
@@ -87,6 +85,54 @@ async function generateCertificatePDF(
   }
 }
 
+function createTransporter() {
+  const host = process.env.EMAIL_HOST;
+  const port = process.env.EMAIL_PORT ? Number(process.env.EMAIL_PORT) : 587;
+  const user = process.env.EMAIL_USER;
+  const pass = process.env.EMAIL_PASS;
+
+  if (!host || !port || !user || !pass) {
+    throw new Error('EMAIL_HOST/EMAIL_PORT/EMAIL_USER/EMAIL_PASS must be configured');
+  }
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: {
+      user,
+      pass,
+    },
+  });
+}
+
+async function sendCertificateEmail(options: {
+  to: string;
+  html: string;
+  pdfBuffer: Buffer;
+  filename: string;
+}) {
+  const transporter = createTransporter();
+  const from = process.env.EMAIL_FROM || process.env.EMAIL_USER;
+
+  if (!from) {
+    throw new Error('EMAIL_FROM or EMAIL_USER must be configured');
+  }
+
+  await transporter.sendMail({
+    from,
+    to: options.to,
+    subject: 'Сертификат участника - Олимпиада по акушерству и гинекологии',
+    html: options.html,
+    attachments: [
+      {
+        filename: options.filename,
+        content: options.pdfBuffer,
+      },
+    ],
+  });
+}
+
 // Отправка одного сертификата
 async function sendSingleCertificate(request: SendCertificateRequest) {
   const { type, teamId, participantName, participantEmail, specialAward } = request;
@@ -153,21 +199,12 @@ async function sendSingleCertificate(request: SendCertificateRequest) {
     })
   );
 
-  // Отправляем email через Resend
-  const result = await resend.emails.send({
-    from: process.env.EMAIL_FROM || 'noreply@yourdomain.com',
+  await sendCertificateEmail({
     to: participantEmail,
-    subject: `Сертификат участника - Олимпиада по акушерству и гинекологии`,
     html: emailHtml,
-    attachments: [
-      {
-        filename: `certificate-${type === 'team' ? team.name : participantName}.pdf`,
-        content: pdfBuffer,
-      },
-    ],
+    pdfBuffer,
+    filename: `certificate-${type === 'team' ? team.name : participantName}.pdf`,
   });
-
-  return result;
 }
 
 // POST: Отправка сертификата одному получателю
@@ -182,12 +219,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await sendSingleCertificate(body);
-
     return NextResponse.json({
       success: true,
       message: 'Сертификат успешно отправлен',
-      emailId: result.data?.id,
     });
 
   } catch (error) {
@@ -214,17 +248,16 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const results = [];
+    const results: Array<{ email: string; success: boolean }> = [];
     const errors = [];
 
     // Отправляем сертификаты последовательно
     for (const recipient of body.recipients) {
       try {
-        const result = await sendSingleCertificate(recipient);
+        await sendSingleCertificate(recipient);
         results.push({
           email: recipient.participantEmail,
           success: true,
-          emailId: result.data?.id,
         });
       } catch (error) {
         errors.push({

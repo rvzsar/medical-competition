@@ -11,6 +11,7 @@ import {
   updateTeam,
   deleteTeam,
   clearAllScores,
+  clearJuryScores,
   backupData,
   restoreData,
   updateAllTeams,
@@ -91,6 +92,13 @@ export async function POST(request: NextRequest) {
       case 'restore':
         const restoreResult = await restoreData(data.backupKey);
         return NextResponse.json({ success: true, data: restoreResult });
+
+      case 'clearJuryScores':
+        if (!data?.juryId) {
+          return NextResponse.json({ error: 'juryId is required' }, { status: 400 });
+        }
+        const clearedJuryScores = await clearJuryScores(data.juryId, data.contestId);
+        return NextResponse.json({ success: true, data: clearedJuryScores });
       
       default:
         return NextResponse.json({ error: 'Invalid type parameter' }, { status: 400 });

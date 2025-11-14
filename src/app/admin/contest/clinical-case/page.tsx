@@ -152,6 +152,47 @@ export default function ClinicalCaseContestPage() {
     return teamScores.filter(score => score.teamId === teamId).length;
   };
 
+  const handleResetMyScores = async () => {
+    if (!currentJury) return;
+    const confirmed = window.confirm('Вы уверены, что хотите сбросить ВСЕ ваши оценки по конкурсу "Клинический случай"?');
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch('/api/data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'clearJuryScores',
+          data: { juryId: currentJury.id, contestId: 'clinical-case' },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to reset scores');
+      }
+
+      const updatedScores = await storageUtils.getTeamScores();
+      const clinicalCaseScores = updatedScores.filter(score => score.contestId === 'clinical-case');
+      setTeamScores(clinicalCaseScores);
+      setScores({});
+      setSelectedTeam("");
+      setCurrentScore({
+        correctAnswer: false,
+        explanation: 0,
+        earlyCompletion: false,
+      });
+      setIsEditing(false);
+      setHasUnsavedChanges(false);
+
+      alert('Все ваши оценки по этому конкурсу были сброшены.');
+    } catch (error) {
+      console.error('Error resetting scores:', error);
+      alert('Ошибка при сбросе оценок. Попробуйте еще раз.');
+    }
+  };
+
   const getExplanationText = (value: number) => {
     switch (value) {
       case 3:
@@ -187,9 +228,17 @@ export default function ClinicalCaseContestPage() {
                 <p className="text-sm text-blue-600 mt-1">Оценивает: {currentJury.name}</p>
               )}
             </div>
-            <Link href="/admin" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-              Назад к панели жюри
-            </Link>
+            <div className="flex flex-col items-end gap-2">
+              <button
+                onClick={handleResetMyScores}
+                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm"
+              >
+                🔄 Сбросить мои оценки
+              </button>
+              <Link href="/admin" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">
+                Назад к панели жюри
+              </Link>
+            </div>
           </div>
         </header>
 

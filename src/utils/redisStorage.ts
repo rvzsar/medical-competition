@@ -234,6 +234,24 @@ export async function clearAllScores() {
   return await getAllData();
 }
 
+// Очистка оценок конкретного члена жюри (옵ционально по конкурсу)
+export async function clearJuryScores(juryId: string, contestId?: string) {
+  const client = await getRedisClient();
+  const teamScores = await getTeamScores();
+
+  const filteredScores = teamScores.filter((score) => {
+    if (!contestId) {
+      return score.juryId !== juryId;
+    }
+    return !(score.juryId === juryId && score.contestId === contestId);
+  });
+
+  await client.set(KEYS.TEAM_SCORES, JSON.stringify(filteredScores));
+  await updateAggregatedScores();
+
+  return await getAllData();
+}
+
 // Резервное копирование данных
 export async function backupData() {
   const data = await getAllData();
