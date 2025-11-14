@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import React from 'react';
 import ReactPDF from '@react-pdf/renderer';
-import { render } from '@react-email/render';
+import { render } from '@react-email/components';
 import CertificateEmail from '@/emails/CertificateEmail';
 import { getAggregatedScores, getTeams } from '@/utils/redisStorage';
 
