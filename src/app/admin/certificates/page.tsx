@@ -27,6 +27,20 @@ export default function CertificatesPage() {
   const [bulkMode, setBulkMode] = useState(false);
   const [bulkRecipients, setBulkRecipients] = useState<CertificateRecipient[]>([]);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [templatesSaving, setTemplatesSaving] = useState(false);
+  const [templates, setTemplates] = useState<{
+    emailSubject: string;
+    emailGreeting: string;
+    emailBodyTeam: string;
+    emailBodyIndividual: string;
+    emailFooter: string;
+    pdfTeamTitle: string;
+    pdfTeamIntro: string;
+    pdfIndividualTitle: string;
+    pdfIndividualIntro: string;
+  } | null>(null);
 
   useEffect(() => {
     loadTeams();
@@ -86,6 +100,7 @@ export default function CertificatesPage() {
         setMessage({ type: 'error', text: error.error || 'Ошибка генерации' });
       }
     } catch (error) {
+      console.error('Ошибка при генерации сертификата:', error);
       setMessage({ type: 'error', text: 'Ошибка при генерации сертификата' });
     }
   };
@@ -126,6 +141,7 @@ export default function CertificatesPage() {
         setMessage({ type: 'error', text: result.error || 'Ошибка отправки' });
       }
     } catch (error) {
+      console.error('Ошибка при отправке сертификата:', error);
       setMessage({ type: 'error', text: 'Ошибка при отправке сертификата' });
     } finally {
       setSending(false);
@@ -174,6 +190,7 @@ export default function CertificatesPage() {
         setMessage({ type: 'error', text: result.error || 'Ошибка тестовой отправки' });
       }
     } catch (error) {
+      console.error('Ошибка при тестовой отправке сертификата:', error);
       setMessage({ type: 'error', text: 'Ошибка при тестовой отправке сертификата' });
     } finally {
       setSending(false);
@@ -240,9 +257,92 @@ export default function CertificatesPage() {
         setMessage({ type: 'error', text: result.error || 'Ошибка массовой отправки' });
       }
     } catch (error) {
+      console.error('Ошибка при массовой отправке:', error);
       setMessage({ type: 'error', text: 'Ошибка при массовой отправке' });
     } finally {
       setSending(false);
+    }
+  };
+
+  const loadTemplates = async () => {
+    try {
+      setTemplatesLoading(true);
+      const response = await fetch('/api/certificates/settings');
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        setMessage({ type: 'error', text: result.error || 'Не удалось загрузить шаблоны' });
+        return;
+      }
+
+      const t = result.templates;
+      setTemplates({
+        emailSubject: t.email.subject,
+        emailGreeting: t.email.greeting,
+        emailBodyTeam: t.email.bodyTeam,
+        emailBodyIndividual: t.email.bodyIndividual,
+        emailFooter: t.email.footer,
+        pdfTeamTitle: t.pdf.teamTitle,
+        pdfTeamIntro: t.pdf.teamIntro,
+        pdfIndividualTitle: t.pdf.individualTitle,
+        pdfIndividualIntro: t.pdf.individualIntro,
+      });
+    } catch (error) {
+      console.error('Ошибка при загрузке шаблонов сертификатов:', error);
+      setMessage({ type: 'error', text: 'Ошибка при загрузке шаблонов' });
+    } finally {
+      setTemplatesLoading(false);
+    }
+  };
+
+  const toggleSettings = async () => {
+    const next = !showSettings;
+    setShowSettings(next);
+    if (next && !templates && !templatesLoading) {
+      await loadTemplates();
+    }
+  };
+
+  const handleSaveTemplates = async () => {
+    if (!templates) return;
+
+    setTemplatesSaving(true);
+    try {
+      const response = await fetch('/api/certificates/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          templates: {
+            email: {
+              subject: templates.emailSubject,
+              greeting: templates.emailGreeting,
+              bodyTeam: templates.emailBodyTeam,
+              bodyIndividual: templates.emailBodyIndividual,
+              footer: templates.emailFooter,
+            },
+            pdf: {
+              teamTitle: templates.pdfTeamTitle,
+              teamIntro: templates.pdfTeamIntro,
+              individualTitle: templates.pdfIndividualTitle,
+              individualIntro: templates.pdfIndividualIntro,
+            },
+          },
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        setMessage({ type: 'error', text: result.error || 'Не удалось сохранить шаблоны' });
+        return;
+      }
+
+      setMessage({ type: 'success', text: 'Шаблоны успешно сохранены' });
+    } catch (error) {
+      console.error('Ошибка при сохранении шаблонов сертификатов:', error);
+      setMessage({ type: 'error', text: 'Ошибка при сохранении шаблонов' });
+    } finally {
+      setTemplatesSaving(false);
     }
   };
 
@@ -291,12 +391,21 @@ export default function CertificatesPage() {
             <h2 className="text-2xl font-bold text-gray-800">
               {bulkMode ? 'Массовая отправка' : 'Одиночная отправка'}
             </h2>
-            <button
-              onClick={() => setBulkMode(!bulkMode)}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-            >
-              {bulkMode ? '← Одиночный режим' : 'Массовый режим →'}
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setBulkMode(!bulkMode)}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+              >
+                {bulkMode ? '← Одиночный режим' : 'Массовый режим →'}
+              </button>
+              <button
+                type="button"
+                onClick={toggleSettings}
+                className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition"
+              >
+                ⚙️ Настроить тексты
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -466,6 +575,169 @@ export default function CertificatesPage() {
                   </button>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {showSettings && (
+          <div className="bg-white rounded-2xl shadow-xl p-8 mt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-gray-800">Настройки текстов сертификатов</h2>
+              <span className="text-sm text-gray-500">
+                Можно использовать переменные: {'{'}{'{'}recipientName{'}'}{'}'}, {'{'}{'{'}teamName{'}'}{'}'}, {'{'}{'{'}eventName{'}'}{'}'}, {'{'}{'{'}place{'}'}{'}'}, {'{'}{'{'}score{'}'}{'}'}, {'{'}{'{'}specialAward{'}'}{'}'}, {'{'}{'{'}organizerName{'}'}{'}'}, {'{'}{'{'}organizerTitle{'}'}{'}'}
+              </span>
+            </div>
+
+            {templatesLoading && (
+              <div className="mb-4 text-gray-500">Загрузка шаблонов...</div>
+            )}
+
+            {templates && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Email</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Тема письма
+                      </label>
+                      <input
+                        type="text"
+                        value={templates.emailSubject}
+                        onChange={(e) =>
+                          setTemplates({ ...templates, emailSubject: e.target.value })
+                        }
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Приветствие
+                      </label>
+                      <input
+                        type="text"
+                        value={templates.emailGreeting}
+                        onChange={(e) =>
+                          setTemplates({ ...templates, emailGreeting: e.target.value })
+                        }
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Основной текст для командных сертификатов
+                      </label>
+                      <textarea
+                        value={templates.emailBodyTeam}
+                        onChange={(e) =>
+                          setTemplates({ ...templates, emailBodyTeam: e.target.value })
+                        }
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm h-24"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Основной текст для именных сертификатов
+                      </label>
+                      <textarea
+                        value={templates.emailBodyIndividual}
+                        onChange={(e) =>
+                          setTemplates({ ...templates, emailBodyIndividual: e.target.value })
+                        }
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm h-24"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Подпись (футер письма)
+                      </label>
+                      <textarea
+                        value={templates.emailFooter}
+                        onChange={(e) =>
+                          setTemplates({ ...templates, emailFooter: e.target.value })
+                        }
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm h-24"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3">PDF сертификаты (текстовые поля)</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Заголовок командного сертификата
+                      </label>
+                      <input
+                        type="text"
+                        value={templates.pdfTeamTitle}
+                        onChange={(e) =>
+                          setTemplates({ ...templates, pdfTeamTitle: e.target.value })
+                        }
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Подводка командного сертификата
+                      </label>
+                      <input
+                        type="text"
+                        value={templates.pdfTeamIntro}
+                        onChange={(e) =>
+                          setTemplates({ ...templates, pdfTeamIntro: e.target.value })
+                        }
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Заголовок именного сертификата
+                      </label>
+                      <input
+                        type="text"
+                        value={templates.pdfIndividualTitle}
+                        onChange={(e) =>
+                          setTemplates({ ...templates, pdfIndividualTitle: e.target.value })
+                        }
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Подводка именного сертификата
+                      </label>
+                      <input
+                        type="text"
+                        value={templates.pdfIndividualIntro}
+                        onChange={(e) =>
+                          setTemplates({ ...templates, pdfIndividualIntro: e.target.value })
+                        }
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={toggleSettings}
+                className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg border border-gray-300 hover:bg-gray-200 text-sm"
+              >
+                Закрыть
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveTemplates}
+                disabled={templatesSaving || templatesLoading || !templates}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm disabled:bg-gray-400"
+              >
+                {templatesSaving ? 'Сохранение...' : 'Сохранить шаблоны'}
+              </button>
             </div>
           </div>
         )}

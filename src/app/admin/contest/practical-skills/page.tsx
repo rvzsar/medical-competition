@@ -3,13 +3,13 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Team, PracticalSkillsScore, SuturesScore, AmbulatoryReceptionScore, ObstetricAidScore, LaparoscopyScore, TeamScore } from "@/types";
+import { Team, PracticalSkillsScore, SuturesScore, AmbulatoryReceptionScore, ObstetricAidScore, LaparoscopyScore, TeamScore, JuryMember } from "@/types";
 import { storageUtils } from "@/utils/serverStorage";
 
 export default function PracticalSkillsContestPage() {
   const router = useRouter();
   const [teams, setTeams] = useState<Team[]>([]);
-  const [currentJury, setCurrentJury] = useState<any>(null);
+  const [currentJury, setCurrentJury] = useState<JuryMember | null>(null);
   const [scores, setScores] = useState<{ [key: string]: PracticalSkillsScore }>({});
   const [teamScores, setTeamScores] = useState<TeamScore[]>([]);
   const [loading, setLoading] = useState(true);

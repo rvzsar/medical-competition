@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 /**
  * Интеграционный тест системы сертификатов
  * Проверяет работу всех компонентов: API endpoints, генерацию PDF, Redis
@@ -48,7 +49,7 @@ function makeRequest(path, options = {}) {
               : data
           };
           resolve(response);
-        } catch (error) {
+        } catch {
           resolve({
             statusCode: res.statusCode,
             headers: res.headers,
@@ -93,7 +94,7 @@ async function runTests() {
       failed++;
     }
   } catch (error) {
-    console.log('   ❌ Ошибка запроса:', error.message);
+    console.log('   ❌ Ошибка запроса:', error instanceof Error ? error.message : String(error));
     failed++;
   }
   console.log('');

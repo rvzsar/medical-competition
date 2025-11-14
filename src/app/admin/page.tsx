@@ -15,6 +15,8 @@ export default function AdminPage() {
   const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [backupData, setBackupData] = useState("");
   const [restoreData, setRestoreData] = useState("");
+  const [scoresLocked, setScoresLocked] = useState<boolean | null>(null);
+  const [lockLoading, setLockLoading] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -32,6 +34,17 @@ export default function AdminPage() {
         setTeams(savedTeams);
       } catch (error) {
         console.error('Error loading teams:', error);
+      }
+
+      // Проверяем статус блокировки оценок
+      try {
+        const headResponse = await fetch('/api/data?type=scoresLock', {
+          method: 'HEAD',
+        });
+        const lockedHeader = headResponse.headers.get('x-scores-locked');
+        setScoresLocked(lockedHeader === '1');
+      } catch (error) {
+        console.error('Error checking scores lock status:', error);
       }
     };
 
@@ -117,7 +130,9 @@ export default function AdminPage() {
 
   const handleLogout = () => {
     storageUtils.clearCurrentJury();
-    router.push('/login');
+    fetch('/api/auth/logout', { method: 'POST' }).finally(() => {
+      router.push('/login');
+    });
   };
 
   const handleExportBackup = async () => {
@@ -185,6 +200,44 @@ export default function AdminPage() {
     }
   };
 
+  const handleToggleScoresLock = async () => {
+    if (scoresLocked === null) return;
+
+    const nextState = !scoresLocked;
+    const confirmText = nextState
+      ? 'Вы уверены, что хотите ЗАБЛОКИРОВАТЬ изменение оценок? После этого жюри не смогут менять баллы.'
+      : 'Вы уверены, что хотите РАЗБЛОКИРОВАТЬ изменение оценок и разрешить редактирование баллов?';
+
+    const confirmed = window.confirm(confirmText);
+    if (!confirmed) return;
+
+    setLockLoading(true);
+    try {
+      const response = await fetch('/api/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'setScoresLock', data: { locked: nextState } }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update scores lock state');
+      }
+
+      const result = await response.json();
+      setScoresLocked(result.data.locked);
+      alert(
+        result.data.locked
+          ? 'Изменение оценок заблокировано. Жюри больше не смогут менять баллы.'
+          : 'Изменение оценок снова разрешено.',
+      );
+    } catch (error) {
+      console.error('Error toggling scores lock state:', error);
+      alert('Ошибка при изменении статуса блокировки оценок. Попробуйте еще раз.');
+    } finally {
+      setLockLoading(false);
+    }
+  };
+
   if (!currentJury) {
     return <div className="flex justify-center items-center min-h-screen">Загрузка...</div>;
   }
@@ -238,7 +291,24 @@ export default function AdminPage() {
             >
               🔄 Сбросить все оценки
             </button>
+            <button
+              onClick={handleToggleScoresLock}
+              disabled={scoresLocked === null || lockLoading}
+              className={`px-4 py-2 rounded text-white ${
+                scoresLocked
+                  ? 'bg-gray-700 hover:bg-gray-800'
+                  : 'bg-emerald-600 hover:bg-emerald-700'
+              } disabled:opacity-60`}
+            >
+              {scoresLocked ? '🔒 Оценки заблокированы' : '🔓 Оценки открыты (разрешено менять)'}
+            </button>
           </div>
+          {scoresLocked && (
+            <p className="mt-3 text-sm text-red-700">
+              После блокировки оценок жюри больше не смогут изменять баллы. Используйте эту функцию
+              только после завершения всех конкурсов и проверки данных.
+            </p>
+          )}
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8">

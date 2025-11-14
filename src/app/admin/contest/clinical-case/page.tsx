@@ -3,13 +3,13 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Team, TeamScore, ClinicalCaseScore } from "@/types";
+import { Team, TeamScore, ClinicalCaseScore, JuryMember } from "@/types";
 import { storageUtils } from "@/utils/serverStorage";
 
 export default function ClinicalCaseContestPage() {
   const router = useRouter();
   const [teams, setTeams] = useState<Team[]>([]);
-  const [currentJury, setCurrentJury] = useState<any>(null);
+  const [currentJury, setCurrentJury] = useState<JuryMember | null>(null);
   const [scores, setScores] = useState<{ [key: string]: ClinicalCaseScore }>({});
   const [teamScores, setTeamScores] = useState<TeamScore[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<string>("");

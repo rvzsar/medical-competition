@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Team, TeamScore, AggregatedScore, JuryMember } from '@/types';
 import {
   getAllData,
   getTeams,
@@ -15,7 +14,9 @@ import {
   backupData,
   restoreData,
   updateAllTeams,
-  updateAllTeamScores
+  updateAllTeamScores,
+  getScoresLockStatus,
+  setScoresLocked,
 } from '@/utils/redisStorage';
 
 export async function GET(request: NextRequest) {
@@ -25,24 +26,19 @@ export async function GET(request: NextRequest) {
   try {
     switch (type) {
       case 'teams':
-        const teams = await getTeams();
-        return NextResponse.json(teams);
+        return NextResponse.json(await getTeams());
       
       case 'teamScores':
-        const teamScores = await getTeamScores();
-        return NextResponse.json(teamScores);
+        return NextResponse.json(await getTeamScores());
       
       case 'aggregatedScores':
-        const aggregatedScores = await getAggregatedScores();
-        return NextResponse.json(aggregatedScores);
+        return NextResponse.json(await getAggregatedScores());
       
       case 'juryMembers':
-        const juryMembers = await getJuryMembers();
-        return NextResponse.json(juryMembers);
+        return NextResponse.json(await getJuryMembers());
       
       case 'all':
-        const allData = await getAllData();
-        return NextResponse.json(allData);
+        return NextResponse.json(await getAllData());
       
       default:
         return NextResponse.json({ error: 'Invalid type parameter' }, { status: 400 });
@@ -55,6 +51,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const authCookie = request.cookies.get('jury_id');
+    if (!authCookie?.value) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { type, data } = body;
 
@@ -93,6 +94,14 @@ export async function POST(request: NextRequest) {
         const restoreResult = await restoreData(data.backupKey);
         return NextResponse.json({ success: true, data: restoreResult });
 
+      case 'setScoresLock':
+        if (typeof data?.locked !== 'boolean') {
+          return NextResponse.json({ error: 'locked flag is required' }, { status: 400 });
+        }
+        // jury_id из cookie в authCookie уже проверен выше
+        const lockState = await setScoresLocked(data.locked, authCookie.value);
+        return NextResponse.json({ success: true, data: lockState });
+
       case 'clearJuryScores':
         if (!data?.juryId) {
           return NextResponse.json({ error: 'juryId is required' }, { status: 400 });
@@ -111,6 +120,11 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const authCookie = request.cookies.get('jury_id');
+    if (!authCookie?.value) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type');
 
@@ -126,5 +140,24 @@ export async function DELETE(request: NextRequest) {
   } catch (error) {
     console.error('API DELETE Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function HEAD(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const type = searchParams.get('type');
+
+    if (type === 'scoresLock') {
+      const state = await getScoresLockStatus();
+      const response = new NextResponse(null, { status: 200 });
+      response.headers.set('x-scores-locked', state.locked ? '1' : '0');
+      return response;
+    }
+
+    return new NextResponse(null, { status: 400 });
+  } catch (error) {
+    console.error('API HEAD Error:', error);
+    return new NextResponse(null, { status: 500 });
   }
 }

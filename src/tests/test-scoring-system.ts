@@ -1,7 +1,15 @@
 // Автоматическое тестирование системы подсчета баллов
 // Этот файл можно запустить в Node.js для тестирования логики подсчета
 
-import { TeamScore, VisitCardScore, ClinicalCaseScore, PracticalSkillsScore, MindBattleScore, JuryQuestionScore } from '../types/index';
+import type {
+  VisitCardScore,
+  ClinicalCaseScore,
+  PracticalSkillsScore,
+  SuturesScore,
+  AmbulatoryReceptionScore,
+  ObstetricAidScore,
+  LaparoscopyScore,
+} from '../types/index';
 
 // Имитация функций расчета из конкурсов
 function calculateVisitCardTotal(score: VisitCardScore) {
@@ -20,19 +28,19 @@ function calculateClinicalCaseTotal(score: ClinicalCaseScore) {
   return total;
 }
 
-function calculateSuturesTotal(sutures: any) {
+function calculateSuturesTotal(sutures: SuturesScore) {
   return sutures.aesthetics + sutures.adaptation + sutures.technique + sutures.time;
 }
 
-function calculateAmbulatoryTotal(ambulatory: any) {
+function calculateAmbulatoryTotal(ambulatory: AmbulatoryReceptionScore) {
   return ambulatory.preparation + ambulatory.technique + ambulatory.completion;
 }
 
-function calculateObstetricTotal(obstetric: any) {
+function calculateObstetricTotal(obstetric: ObstetricAidScore) {
   return obstetric.correctness + obstetric.safety + obstetric.time + obstetric.teamwork;
 }
 
-function calculateLaparoscopyTotal(laparoscopy: any) {
+function calculateLaparoscopyTotal(laparoscopy: LaparoscopyScore) {
   return (
     laparoscopy.translocation.accuracy + laparoscopy.translocation.trajectory +
     laparoscopy.coordination.accuracy + laparoscopy.coordination.trajectory +
@@ -169,7 +177,7 @@ function runTests() {
   console.log("🧪 Запуск автоматизированного тестирования системы подсчета баллов\n");
   
   let passedTests = 0;
-  let totalTests = testCases.length;
+  const totalTests = testCases.length;
   
   testCases.forEach((testCase, index) => {
     let actual: number;

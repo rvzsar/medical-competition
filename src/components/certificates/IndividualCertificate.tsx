@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   },
 });
 
-interface IndividualCertificateProps {
+export interface IndividualCertificateProps {
   participantName: string;
   teamName: string;
   achievement: string;
@@ -189,6 +189,8 @@ interface IndividualCertificateProps {
   organizerName: string;
   organizerTitle: string;
   certificateNumber: string;
+  titleText?: string;
+  introText?: string;
 }
 
 const IndividualCertificate: React.FC<IndividualCertificateProps> = ({
@@ -201,6 +203,8 @@ const IndividualCertificate: React.FC<IndividualCertificateProps> = ({
   organizerName,
   organizerTitle,
   certificateNumber,
+  titleText,
+  introText,
 }) => {
   return (
     <Document>
@@ -212,12 +216,12 @@ const IndividualCertificate: React.FC<IndividualCertificateProps> = ({
           <View style={styles.logo}>
             <Text style={styles.logoText}>⚕</Text>
           </View>
-          <Text style={styles.title}>ИМЕННОЙ СЕРТИФИКАТ</Text>
+          <Text style={styles.title}>{titleText || 'ИМЕННОЙ СЕРТИФИКАТ'}</Text>
           <Text style={styles.subtitle}>{eventName}</Text>
         </View>
 
         <View style={styles.content}>
-          <Text style={styles.awardText}>Настоящий сертификат выдан</Text>
+          <Text style={styles.awardText}>{introText || 'Настоящий сертификат выдан'}</Text>
           
           <Text style={styles.participantName}>{participantName}</Text>
 

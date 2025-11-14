@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 // Тестирование серверного хранения данных и многопользовательского режима
 const fs = require('fs');
 const path = require('path');

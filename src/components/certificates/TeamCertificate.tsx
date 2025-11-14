@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   },
 });
 
-interface TeamCertificateProps {
+export interface TeamCertificateProps {
   teamName: string;
   place: number;
   score: number;
@@ -185,6 +185,8 @@ interface TeamCertificateProps {
   organizerName: string;
   organizerTitle: string;
   certificateNumber: string;
+  titleText?: string;
+  introText?: string;
 }
 
 const TeamCertificate: React.FC<TeamCertificateProps> = ({
@@ -196,6 +198,8 @@ const TeamCertificate: React.FC<TeamCertificateProps> = ({
   organizerName,
   organizerTitle,
   certificateNumber,
+  titleText,
+  introText,
 }) => {
   const getPlaceText = (place: number): string => {
     switch (place) {
@@ -233,12 +237,14 @@ const TeamCertificate: React.FC<TeamCertificateProps> = ({
           <View style={styles.logo}>
             <Text style={styles.logoText}>⚕</Text>
           </View>
-          <Text style={styles.title}>СЕРТИФИКАТ</Text>
+          <Text style={styles.title}>{titleText || 'СЕРТИФИКАТ'}</Text>
           <Text style={styles.subtitle}>{eventName}</Text>
         </View>
 
         <View style={styles.content}>
-          <Text style={styles.awardText}>Настоящий сертификат подтверждает, что команда</Text>
+          <Text style={styles.awardText}>
+            {introText || 'Настоящий сертификат подтверждает, что команда'}
+          </Text>
           
           <Text style={styles.teamName}>{teamName}</Text>
 

@@ -8,7 +8,6 @@ import {
   Text,
   Heading,
   Hr,
-  Link,
 } from '@react-email/components';
 
 interface CertificateEmailProps {
@@ -18,6 +17,10 @@ interface CertificateEmailProps {
   place?: number;
   score?: number;
   eventName: string;
+  greetingText?: string;
+  teamText?: string;
+  individualText?: string;
+  footerText?: string;
 }
 
 export default function CertificateEmail({
@@ -27,6 +30,10 @@ export default function CertificateEmail({
   place,
   score,
   eventName,
+  greetingText,
+  teamText,
+  individualText,
+  footerText,
 }: CertificateEmailProps) {
   const getPlaceText = (place?: number): string => {
     if (!place) return '';
@@ -56,20 +63,37 @@ export default function CertificateEmail({
 
           <Section style={styles.content}>
             <Text style={styles.greeting}>
-              Здравствуйте, {recipientName}!
+              {greetingText || `Здравствуйте, ${recipientName}!`}
             </Text>
 
             <Text style={styles.text}>
-              Поздравляем вас с успешным участием в мероприятии{' '}
-              <strong>"{eventName}"</strong>!
+              {teamText && certificateType === 'team'
+                ? teamText
+                : certificateType === 'team'
+                ? (
+                    <>
+                      Поздравляем вас с успешным участием в мероприятии{' '}
+                      <strong>«{eventName}»</strong>!
+                    </>
+                  )
+                : individualText
+                ? individualText
+                : (
+                    <>
+                      Поздравляем вас с успешным участием в мероприятии{' '}
+                      <strong>«{eventName}»</strong>!
+                    </>
+                  )}
             </Text>
 
             {certificateType === 'team' && teamName && (
               <>
-                <Text style={styles.text}>
-                  Ваша команда <strong>{teamName}</strong> показала отличные
-                  результаты.
-                </Text>
+                {!teamText && (
+                  <Text style={styles.text}>
+                    Ваша команда <strong>{teamName}</strong> показала отличные
+                    результаты.
+                  </Text>
+                )}
                 {place && place <= 3 && (
                   <Section style={styles.achievement}>
                     <Text style={styles.achievementText}>
@@ -85,7 +109,7 @@ export default function CertificateEmail({
               </>
             )}
 
-            {certificateType === 'individual' && (
+            {certificateType === 'individual' && !individualText && (
               <Text style={styles.text}>
                 Вы продемонстрировали высокий уровень знаний и практических
                 навыков в области акушерства и гинекологии.
@@ -100,9 +124,20 @@ export default function CertificateEmail({
             <Hr style={styles.hr} />
 
             <Text style={styles.footer}>
-              С уважением,
-              <br />
-              <strong>Кафедра акушерства и гинекологии</strong>
+              {footerText ? (
+                footerText.split('\n').map((line, index) => (
+                  <React.Fragment key={index}>
+                    {line}
+                    <br />
+                  </React.Fragment>
+                ))
+              ) : (
+                <>
+                  С уважением,
+                  <br />
+                  <strong>Кафедра акушерства и гинекологии</strong>
+                </>
+              )}
             </Text>
 
             <Text style={styles.disclaimer}>

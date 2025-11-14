@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 // Тестирование функционала редактирования оценок
 const { execSync } = require('child_process');
 const fs = require('fs');

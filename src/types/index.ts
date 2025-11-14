@@ -25,7 +25,7 @@ export interface TeamScore {
   contestId: string;
   juryId: string;
   score: number;
-  details?: any;
+  details?: unknown;
   completedAt?: Date;
 }
 

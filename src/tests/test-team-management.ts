@@ -26,7 +26,6 @@ async function testTeamManagement() {
   console.log('1️⃣ Тест: Получение списка команд');
   try {
     const teams = await storageUtils.getTeams();
-    const initialCount = teams.length;
     console.log(`   ✓ Получено команд: ${teams.length}`);
     console.log(`   ✓ Первая команда: ${teams[0]?.name || 'Нет команд'}`);
     passedTests++;

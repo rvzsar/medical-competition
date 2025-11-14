@@ -1,12 +1,15 @@
 import { createClient, RedisClientType } from 'redis';
 import { Team, TeamScore, AggregatedScore, JuryMember } from '@/types';
+import { CertificateTemplatesConfig } from '@/types/certificate';
 
 // Ключи для хранения данных в Redis
 const KEYS = {
   TEAMS: 'medical-competition:teams',
   TEAM_SCORES: 'medical-competition:team-scores',
   AGGREGATED_SCORES: 'medical-competition:aggregated-scores',
-  JURY_MEMBERS: 'medical-competition:jury-members'
+  JURY_MEMBERS: 'medical-competition:jury-members',
+  CERTIFICATE_TEMPLATES: 'medical-competition:certificate-templates',
+  SCORES_LOCK: 'medical-competition:scores-lock',
 };
 
 // Члены жюри (константы)
@@ -111,7 +114,9 @@ async function updateAggregatedScores() {
           };
         });
 
-        const averageScore = juryScores.reduce((sum: number, js: any) => sum + js.score, 0) / juryScores.length;
+        const averageScore =
+          juryScores.reduce((sum: number, js: { score: number }) => sum + js.score, 0) /
+          juryScores.length;
 
         aggregatedScores.push({
           teamId: team.id,
@@ -165,6 +170,10 @@ export async function getJuryMembers(): Promise<JuryMember[]> {
 
 // Добавление оценки команды
 export async function addTeamScore(score: TeamScore) {
+  const lockState = await getScoresLockState();
+  if (lockState.locked) {
+    throw new Error('Изменение оценок заблокировано организатором');
+  }
   const client = await getRedisClient();
   const teamScores = await getTeamScores();
   const existingIndex = teamScores.findIndex(
@@ -317,10 +326,146 @@ export async function updateAllTeamScores(teamScores: TeamScore[]) {
   return await getAllData();
 }
 
+export interface ScoresLockState {
+  locked: boolean;
+  lockedAt: string | null;
+  lockedBy: string | null;
+}
+
+async function getScoresLockState(): Promise<ScoresLockState> {
+  const client = await getRedisClient();
+  const raw = await client.get(KEYS.SCORES_LOCK);
+
+  if (!raw) {
+    return { locked: false, lockedAt: null, lockedBy: null };
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as ScoresLockState;
+    return {
+      locked: !!parsed.locked,
+      lockedAt: parsed.lockedAt || null,
+      lockedBy: parsed.lockedBy || null,
+    };
+  } catch {
+    return { locked: false, lockedAt: null, lockedBy: null };
+  }
+}
+
+export async function setScoresLocked(locked: boolean, lockedBy: string | null): Promise<ScoresLockState> {
+  const client = await getRedisClient();
+  const state: ScoresLockState = {
+    locked,
+    lockedAt: locked ? new Date().toISOString() : null,
+    lockedBy,
+  };
+
+  await client.set(KEYS.SCORES_LOCK, JSON.stringify(state));
+  return state;
+}
+
+export async function getScoresLockStatus(): Promise<ScoresLockState> {
+  return getScoresLockState();
+}
+
 // Закрытие соединения (для cleanup)
 export async function closeRedisConnection() {
   if (redisClient && redisClient.isOpen) {
     await redisClient.quit();
     redisClient = null;
   }
+}
+
+const DEFAULT_CERTIFICATE_TEMPLATES: CertificateTemplatesConfig = {
+  email: {
+    subject: 'Сертификат участника – {{eventName}}',
+    greeting: 'Здравствуйте, {{recipientName}}!',
+    bodyTeam:
+      'Ваша команда {{teamName}} приняла участие в мероприятии "{{eventName}}" и показала достойные результаты.',
+    bodyIndividual:
+      'Вы приняли участие в мероприятии "{{eventName}}" и продемонстрировали высокий уровень знаний и практических навыков.',
+    footer:
+      'С уважением,\n{{organizerName}}\n{{organizerTitle}}\n{{eventName}}',
+  },
+  pdf: {
+    teamTitle: 'СЕРТИФИКАТ',
+    teamIntro: 'Настоящий сертификат подтверждает, что команда',
+    individualTitle: 'ИМЕННОЙ СЕРТИФИКАТ',
+    individualIntro: 'Настоящий сертификат выдан',
+  },
+};
+
+export async function getCertificateTemplates(): Promise<CertificateTemplatesConfig> {
+  const client = await getRedisClient();
+  const raw = await client.get(KEYS.CERTIFICATE_TEMPLATES);
+
+  if (!raw) {
+    return DEFAULT_CERTIFICATE_TEMPLATES;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<CertificateTemplatesConfig>;
+
+    return {
+      email: {
+        subject: parsed.email?.subject || DEFAULT_CERTIFICATE_TEMPLATES.email.subject,
+        greeting: parsed.email?.greeting || DEFAULT_CERTIFICATE_TEMPLATES.email.greeting,
+        bodyTeam: parsed.email?.bodyTeam || DEFAULT_CERTIFICATE_TEMPLATES.email.bodyTeam,
+        bodyIndividual:
+          parsed.email?.bodyIndividual || DEFAULT_CERTIFICATE_TEMPLATES.email.bodyIndividual,
+        footer: parsed.email?.footer || DEFAULT_CERTIFICATE_TEMPLATES.email.footer,
+      },
+      pdf: {
+        teamTitle: parsed.pdf?.teamTitle || DEFAULT_CERTIFICATE_TEMPLATES.pdf.teamTitle,
+        teamIntro: parsed.pdf?.teamIntro || DEFAULT_CERTIFICATE_TEMPLATES.pdf.teamIntro,
+        individualTitle:
+          parsed.pdf?.individualTitle || DEFAULT_CERTIFICATE_TEMPLATES.pdf.individualTitle,
+        individualIntro:
+          parsed.pdf?.individualIntro || DEFAULT_CERTIFICATE_TEMPLATES.pdf.individualIntro,
+      },
+    };
+  } catch {
+    return DEFAULT_CERTIFICATE_TEMPLATES;
+  }
+}
+
+export async function saveCertificateTemplates(
+  templates: CertificateTemplatesConfig,
+): Promise<CertificateTemplatesConfig> {
+  const client = await getRedisClient();
+
+  const sanitized: CertificateTemplatesConfig = {
+    email: {
+      subject: templates.email.subject?.toString().slice(0, 300) || DEFAULT_CERTIFICATE_TEMPLATES.email.subject,
+      greeting:
+        templates.email.greeting?.toString().slice(0, 300) ||
+        DEFAULT_CERTIFICATE_TEMPLATES.email.greeting,
+      bodyTeam:
+        templates.email.bodyTeam?.toString().slice(0, 1000) ||
+        DEFAULT_CERTIFICATE_TEMPLATES.email.bodyTeam,
+      bodyIndividual:
+        templates.email.bodyIndividual?.toString().slice(0, 1000) ||
+        DEFAULT_CERTIFICATE_TEMPLATES.email.bodyIndividual,
+      footer:
+        templates.email.footer?.toString().slice(0, 500) ||
+        DEFAULT_CERTIFICATE_TEMPLATES.email.footer,
+    },
+    pdf: {
+      teamTitle:
+        templates.pdf.teamTitle?.toString().slice(0, 100) ||
+        DEFAULT_CERTIFICATE_TEMPLATES.pdf.teamTitle,
+      teamIntro:
+        templates.pdf.teamIntro?.toString().slice(0, 300) ||
+        DEFAULT_CERTIFICATE_TEMPLATES.pdf.teamIntro,
+      individualTitle:
+        templates.pdf.individualTitle?.toString().slice(0, 100) ||
+        DEFAULT_CERTIFICATE_TEMPLATES.pdf.individualTitle,
+      individualIntro:
+        templates.pdf.individualIntro?.toString().slice(0, 300) ||
+        DEFAULT_CERTIFICATE_TEMPLATES.pdf.individualIntro,
+    },
+  };
+
+  await client.set(KEYS.CERTIFICATE_TEMPLATES, JSON.stringify(sanitized));
+  return sanitized;
 }

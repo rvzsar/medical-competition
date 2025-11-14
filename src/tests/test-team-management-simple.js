@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 // Упрощенное тестирование системы управления командами через API
 const http = require('http');
 
@@ -83,7 +84,6 @@ async function testTeamManagement() {
     try {
       const response = await makeRequest('?type=teams');
       const teams = response.data;
-      const initialCount = teams.length;
       console.log(`   ✓ Получено команд: ${teams.length}`);
       console.log(`   ✓ Первая команда: ${teams[0]?.name || 'Нет команд'}`);
       passedTests++;

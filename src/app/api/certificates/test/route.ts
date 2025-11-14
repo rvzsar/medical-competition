@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getAggregatedScores, getTeams } from '@/utils/redisStorage';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const teams = await getTeams();
     const scores = await getAggregatedScores();

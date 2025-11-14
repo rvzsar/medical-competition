@@ -1,4 +1,4 @@
-import { JuryMember, TeamScore, AggregatedScore } from "@/types";
+import { JuryMember, TeamScore, AggregatedScore, Team } from "@/types";
 
 const API_BASE = '/api/data';
 
@@ -21,7 +21,7 @@ export const serverStorageUtils = {
   },
 
   // Работа с командами (серверное хранилище)
-  async getTeams(): Promise<any[]> {
+  async getTeams(): Promise<Team[]> {
     try {
       const response = await fetch(`${API_BASE}?type=teams`);
       if (!response.ok) throw new Error('Failed to fetch teams');
@@ -32,7 +32,7 @@ export const serverStorageUtils = {
     }
   },
 
-  async setTeams(teams: any[]): Promise<void> {
+  async setTeams(teams: Team[]): Promise<void> {
     try {
       const response = await fetch(API_BASE, {
         method: 'POST',
@@ -47,7 +47,7 @@ export const serverStorageUtils = {
     }
   },
 
-  async addTeam(team: any): Promise<void> {
+  async addTeam(team: Team): Promise<void> {
     try {
       const response = await fetch(API_BASE, {
         method: 'POST',
@@ -62,7 +62,7 @@ export const serverStorageUtils = {
     }
   },
 
-  async updateTeam(team: any): Promise<void> {
+  async updateTeam(team: Team): Promise<void> {
     try {
       const response = await fetch(API_BASE, {
         method: 'POST',
@@ -173,7 +173,7 @@ export const serverStorageUtils = {
 
   async setAggregatedScores(scores: AggregatedScore[]): Promise<void> {
     // Агрегированные оценки обновляются на сервере автоматически
-    console.log('Aggregated scores are updated automatically on server');
+    console.log('Aggregated scores are updated automatically on server; received', scores.length, 'items');
   },
 
   // Получение агрегированной оценки для команды и конкурса

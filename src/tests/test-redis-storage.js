@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 // Тестирование Redis хранилища
 const fs = require('fs');
 const path = require('path');

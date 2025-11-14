@@ -37,31 +37,17 @@ export default function ResultsPage() {
     { id: "jury-question", name: "VI конкурс. Вопрос от жюри", maxScore: 2 },
   ];
 
-  const getTeamScore = async (teamId: string, contestId: string) => {
-    try {
-      return await storageUtils.getAggregatedScore(teamId, contestId);
-    } catch (error) {
-      console.error('Error getting team score:', error);
-      return 0;
-    }
-  };
-
-  const getTeamTotalScore = async (teamId: string) => {
-    try {
-      return await storageUtils.getTeamTotalScore(teamId);
-    } catch (error) {
-      console.error('Error getting team total score:', error);
-      return 0;
-    }
-  };
-
   const getTeamAggregatedScore = (teamId: string, contestId: string): AggregatedScore | undefined => {
     return aggregatedScores.find(s => s.teamId === teamId && s.contestId === contestId);
   };
 
-  const sortedTeams = [...teams].sort((a, b) => {
-    // Сортировка будет выполнена после загрузки данных
-    return 0;
+  const getTeamTotalFromState = (teamId: string): number => {
+    const teamScores = aggregatedScores.filter((s) => s.teamId === teamId);
+    return teamScores.reduce((total, score) => total + score.averageScore, 0);
+  };
+
+  const sortedTeams = [...teams].sort((teamA, teamB) => {
+    return getTeamTotalFromState(teamB.id) - getTeamTotalFromState(teamA.id);
   });
 
   const getPlaceColor = (place: number) => {
@@ -182,10 +168,10 @@ export default function ResultsPage() {
           <div className="text-gray-700">
             <h3 className="font-semibold mb-2">Командные награды:</h3>
             <ul className="space-y-1 text-sm">
-              <li>🥇 1 место - освобождение от экзамена с оценкой "отлично"</li>
+              <li>🥇 1 место - освобождение от экзамена с оценкой «отлично»</li>
               <li>🥈 2 место - +1 балл к экзамену</li>
               <li>🥉 3 место - +1 балл к экзамену</li>
-              <li>🎬 Победитель конкурса "Визитка" - +1 балл к экзамену</li>
+              <li>🎬 Победитель конкурса «Визитка» - +1 балл к экзамену</li>
             </ul>
           </div>
         </div>

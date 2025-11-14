@@ -1,4 +1,9 @@
-import { JuryMember, TeamScore, AggregatedScore } from "@/types";
+import { JuryMember, TeamScore, AggregatedScore, Team } from "@/types";
+
+type ScoreBackup = TeamScore & {
+  timestamp: number;
+  backupId: string;
+};
 
 const STORAGE_KEYS = {
   CURRENT_JURY: 'currentJury',
@@ -26,13 +31,13 @@ export const storageUtils = {
   },
 
   // Работа с командами
-  getTeams(): any[] {
+  getTeams(): Team[] {
     if (typeof window === 'undefined') return [];
     const teamsData = localStorage.getItem(STORAGE_KEYS.TEAMS);
     return teamsData ? JSON.parse(teamsData) : [];
   },
 
-  setTeams(teams: any[]): void {
+  setTeams(teams: Team[]): void {
     if (typeof window === 'undefined') return;
     localStorage.setItem(STORAGE_KEYS.TEAMS, JSON.stringify(teams));
   },
@@ -82,14 +87,14 @@ export const storageUtils = {
       backups[backupKey] = {
         ...score,
         timestamp: Date.now(),
-        backupId: backupKey
+        backupId: backupKey,
       };
       localStorage.setItem('competition_backups', JSON.stringify(backups));
       
       // Удаляем старые бэкапы (оставляем последние 50)
       const backupEntries = Object.entries(backups);
       if (backupEntries.length > 50) {
-        const sortedEntries = backupEntries.sort(([,a], [,b]) => a.timestamp - b.timestamp);
+        const sortedEntries = backupEntries.sort(([, a], [, b]) => a.timestamp - b.timestamp);
         const toKeep = sortedEntries.slice(-50);
         const newBackups = Object.fromEntries(toKeep);
         localStorage.setItem('competition_backups', JSON.stringify(newBackups));
@@ -100,7 +105,7 @@ export const storageUtils = {
   },
 
   // Получение резервных копий
-  getBackups(): Record<string, any> {
+  getBackups(): Record<string, ScoreBackup> {
     try {
       const backupsData = localStorage.getItem('competition_backups');
       return backupsData ? JSON.parse(backupsData) : {};

@@ -4,62 +4,46 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { JuryMember } from "@/types";
+import { JURY_MEMBERS } from "@/config/juryMembers";
 
 export default function LoginPage() {
   const router = useRouter();
   const [selectedJury, setSelectedJury] = useState<string>("");
   const [error, setError] = useState<string>("");
 
-  const juryMembers: JuryMember[] = [
-    {
-      id: "1",
-      name: "Завалко Александр Федорович",
-      title: "д.м.н., доцент, заведующий кафедрой акушерства, гинекологии и педиатрии",
-      isActive: true,
-    },
-    {
-      id: "2",
-      name: "Столяров Сергей Анатольевич",
-      title: "д.м.н., доцент, советник ректора по хирургии, заведующий кафедрой хирургических болезней",
-      isActive: true,
-    },
-    {
-      id: "3",
-      name: "Портянникова Наталия Петровна",
-      title: "к.м.н., доцент кафедры акушерства и гинекологии с курсом эндоскопической хирургии и симуляционно-тренингового обучения",
-      isActive: true,
-    },
-    {
-      id: "4",
-      name: "Никаноров Владимир Николаевич",
-      title: "к.м.н., доцент кафедры акушерства и гинекологии с курсом эндоскопической хирургии и симуляционно-тренингового обучения",
-      isActive: true,
-    },
-    {
-      id: "5",
-      name: "Ишутов Игорь Валерьевич",
-      title: "к.м.н., главный врач МПК РЕАВИЗ, доцент кафедры хирургических болезней",
-      isActive: true,
-    },
-    {
-      id: "6",
-      name: "Асеева Елена Владимировна",
-      title: "к.м.н., доцент, декан лечебного факультета",
-      isActive: true,
-    },
-  ];
+  const juryMembers: JuryMember[] = JURY_MEMBERS;
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!selectedJury) {
       setError("Пожалуйста, выберите члена жюри");
       return;
     }
 
     const jury = juryMembers.find(j => j.id === selectedJury);
-    if (jury) {
-      // Сохраняем информацию о текущем члене жюри в localStorage
-      localStorage.setItem('currentJury', JSON.stringify(jury));
+    if (!jury) {
+      setError("Выбранный член жюри не найден");
+      return;
+    }
+
+    // Сохраняем информацию о текущем члене жюри в localStorage
+    localStorage.setItem('currentJury', JSON.stringify(jury));
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ juryId: jury.id }),
+      });
+
+      if (!response.ok) {
+        setError('Ошибка при создании сессии. Попробуйте еще раз.');
+        return;
+      }
+
       router.push('/admin');
+    } catch (e) {
+      console.error('Login error:', e);
+      setError('Ошибка входа. Проверьте подключение к сети.');
     }
   };
 

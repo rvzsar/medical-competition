@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import React from 'react';
-import ReactPDF from '@react-pdf/renderer';
+import ReactPDF, { DocumentProps } from '@react-pdf/renderer';
 import { render } from '@react-email/components';
 import nodemailer from 'nodemailer';
 import CertificateEmail from '@/emails/CertificateEmail';
-import { getAggregatedScores, getTeams } from '@/utils/redisStorage';
+import { AggregatedScore } from '@/types';
+import type { TeamCertificateProps } from '@/components/certificates/TeamCertificate';
+import type { IndividualCertificateProps } from '@/components/certificates/IndividualCertificate';
+import { getAggregatedScores, getTeams, getCertificateTemplates } from '@/utils/redisStorage';
 
 interface SendCertificateRequest {
   type: 'team' | 'individual';
@@ -48,20 +51,34 @@ function getAchievementText(place: number): string {
 }
 
 // Функция для расчета общего балла команды
-function calculateTotalScore(teamId: string, allScores: any[]): number {
+function calculateTotalScore(teamId: string, allScores: AggregatedScore[]): number {
   const teamScores = allScores.filter(s => s.teamId === teamId);
   return teamScores.reduce((sum, score) => sum + score.averageScore, 0);
 }
 
 // Генерация PDF сертификата
 async function generateCertificatePDF(
+  type: 'team',
+  certificateData: TeamCertificateProps,
+): Promise<Buffer>;
+async function generateCertificatePDF(
+  type: 'individual',
+  certificateData: IndividualCertificateProps,
+): Promise<Buffer>;
+async function generateCertificatePDF(
   type: 'team' | 'individual',
-  certificateData: any
+  certificateData: TeamCertificateProps | IndividualCertificateProps,
 ): Promise<Buffer> {
+  const templates = await getCertificateTemplates();
+
   if (type === 'team') {
     const { default: TeamCertificate } = await import('@/components/certificates/TeamCertificate');
     const pdfStream = await ReactPDF.renderToStream(
-      React.createElement(TeamCertificate, certificateData) as any
+      React.createElement(TeamCertificate, {
+        ...(certificateData as TeamCertificateProps),
+        titleText: templates.pdf.teamTitle,
+        introText: templates.pdf.teamIntro,
+      }) as React.ReactElement<DocumentProps>
     );
 
     const chunks: Buffer[] = [];
@@ -73,7 +90,11 @@ async function generateCertificatePDF(
   } else {
     const { default: IndividualCertificate } = await import('@/components/certificates/IndividualCertificate');
     const pdfStream = await ReactPDF.renderToStream(
-      React.createElement(IndividualCertificate, certificateData) as any
+      React.createElement(IndividualCertificate, {
+        ...(certificateData as IndividualCertificateProps),
+        titleText: templates.pdf.individualTitle,
+        introText: templates.pdf.individualIntro,
+      }) as React.ReactElement<DocumentProps>
     );
 
     const chunks: Buffer[] = [];
@@ -83,6 +104,13 @@ async function generateCertificatePDF(
       pdfStream.on('error', reject);
     });
   }
+}
+
+function applyTemplate(template: string, context: Record<string, string | number | null | undefined>): string {
+  return template.replace(/{{\s*([a-zA-Z0-9_]+)\s*}}/g, (_, key) => {
+    const value = context[key];
+    return value === undefined || value === null ? '' : String(value);
+  });
 }
 
 function createTransporter() {
@@ -107,6 +135,7 @@ async function sendCertificateEmail(options: {
   html: string;
   pdfBuffer: Buffer;
   filename: string;
+  subject?: string;
 }) {
   const transporter = createTransporter();
   const from = process.env.EMAIL_FROM || process.env.EMAIL_USER;
@@ -118,7 +147,7 @@ async function sendCertificateEmail(options: {
     const info = await transporter.sendMail({
       from,
       to: options.to,
-      subject: 'Сертификат участника - Олимпиада по акушерству и гинекологии',
+      subject: options.subject || 'Сертификат участника - Олимпиада по акушерству и гинекологии',
       html: options.html,
       attachments: [
         {
@@ -175,6 +204,8 @@ async function sendSingleCertificate(request: SendCertificateRequest) {
   const place = sortedScores.findIndex(s => s.teamId === teamId) + 1;
   const totalScore = teamTotals.find(t => t.teamId === teamId)?.totalScore || 0;
 
+  const templates = await getCertificateTemplates();
+
   // Данные сертификата
   const certificateData = {
     ...(type === 'team'
@@ -201,7 +232,32 @@ async function sendSingleCertificate(request: SendCertificateRequest) {
   };
 
   // Генерируем PDF
-  const pdfBuffer = await generateCertificatePDF(type, certificateData);
+  const pdfBuffer =
+    type === 'team'
+      ? await generateCertificatePDF('team', certificateData as TeamCertificateProps)
+      : await generateCertificatePDF('individual', certificateData as IndividualCertificateProps);
+
+  const eventName = 'Олимпиада по акушерству и гинекологии';
+  const organizerName = certificateData.organizerName;
+  const organizerTitle = certificateData.organizerTitle;
+
+  const context = {
+    recipientName: type === 'team' ? team.name : participantName || '',
+    teamName: team.name,
+    place,
+    score: totalScore ? totalScore.toFixed(2) : '',
+    eventName,
+    organizerName,
+    organizerTitle,
+    specialAward: specialAward || '',
+  };
+
+  const emailTemplates = templates.email;
+  const greetingText = applyTemplate(emailTemplates.greeting, context);
+  const bodyTeamText = applyTemplate(emailTemplates.bodyTeam, context);
+  const bodyIndividualText = applyTemplate(emailTemplates.bodyIndividual, context);
+  const footerText = applyTemplate(emailTemplates.footer, context);
+  const emailSubject = applyTemplate(emailTemplates.subject, context);
 
   // Генерируем HTML email
   const emailHtml = await render(
@@ -211,7 +267,11 @@ async function sendSingleCertificate(request: SendCertificateRequest) {
       teamName: team.name,
       place: place <= 3 ? place : undefined,
       score: type === 'team' ? totalScore : undefined,
-      eventName: 'Олимпиада по акушерству и гинекологии',
+      eventName,
+      greetingText,
+      teamText: bodyTeamText,
+      individualText: bodyIndividualText,
+      footerText,
     })
   );
 
@@ -220,6 +280,7 @@ async function sendSingleCertificate(request: SendCertificateRequest) {
     html: emailHtml,
     pdfBuffer,
     filename: `certificate-${type === 'team' ? team.name : participantName}.pdf`,
+    subject: emailSubject,
   });
 
   return smtpInfo;
@@ -228,6 +289,10 @@ async function sendSingleCertificate(request: SendCertificateRequest) {
 // POST: Отправка сертификата одному получателю
 export async function POST(request: NextRequest) {
   try {
+    const authCookie = request.cookies.get('jury_id');
+    if (!authCookie?.value) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const body: SendCertificateRequest = await request.json();
     
     if (!body.participantEmail) {
@@ -260,6 +325,10 @@ export async function POST(request: NextRequest) {
 // PUT: Массовая отправка сертификатов
 export async function PUT(request: NextRequest) {
   try {
+    const authCookie = request.cookies.get('jury_id');
+    if (!authCookie?.value) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const body: SendBulkRequest = await request.json();
     
     if (!body.recipients || !Array.isArray(body.recipients) || body.recipients.length === 0) {
@@ -269,7 +338,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const results: Array<{ email: string; success: boolean; smtp?: any }> = [];
+    const results: Array<{ email: string; success: boolean; smtp?: unknown }> = [];
     const errors = [];
 
     // Отправляем сертификаты последовательно

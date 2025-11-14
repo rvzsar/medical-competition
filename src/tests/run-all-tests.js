@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 // Запуск всех тестов системы
 const { execSync } = require('child_process');
 const path = require('path');

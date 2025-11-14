@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 // Скрипт для запуска тестов в Node.js
 const { execSync } = require('child_process');
 const fs = require('fs');

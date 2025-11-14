@@ -57,3 +57,23 @@ export interface BulkOperationResult {
   failed: number;
   errors: Array<{ recipient: string; error: string }>;
 }
+
+export interface CertificateEmailTemplateConfig {
+  subject: string;
+  greeting: string;
+  bodyTeam: string;
+  bodyIndividual: string;
+  footer: string;
+}
+
+export interface CertificatePdfTemplateConfig {
+  teamTitle: string;
+  teamIntro: string;
+  individualTitle: string;
+  individualIntro: string;
+}
+
+export interface CertificateTemplatesConfig {
+  email: CertificateEmailTemplateConfig;
+  pdf: CertificatePdfTemplateConfig;
+}

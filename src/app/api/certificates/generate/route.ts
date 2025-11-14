@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import React from 'react';
-import ReactPDF from '@react-pdf/renderer';
-import { getAggregatedScores, getTeams } from '@/utils/redisStorage';
+import ReactPDF, { DocumentProps } from '@react-pdf/renderer';
+import { AggregatedScore } from '@/types';
+import type { TeamCertificateProps } from '@/components/certificates/TeamCertificate';
+import type { IndividualCertificateProps } from '@/components/certificates/IndividualCertificate';
+import { getAggregatedScores, getTeams, getCertificateTemplates } from '@/utils/redisStorage';
 
 interface GenerateCertificateRequest {
   type: 'team' | 'individual';
@@ -34,13 +37,17 @@ function getAchievementText(place: number): string {
 }
 
 // Функция для расчета общего балла команды
-function calculateTotalScore(teamId: string, allScores: any[]): number {
+function calculateTotalScore(teamId: string, allScores: AggregatedScore[]): number {
   const teamScores = allScores.filter(s => s.teamId === teamId);
   return teamScores.reduce((sum, score) => sum + score.averageScore, 0);
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const authCookie = request.cookies.get('jury_id');
+    if (!authCookie?.value) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const body: GenerateCertificateRequest = await request.json();
     const { type, teamId, participantName, specialAward } = body;
 
@@ -71,12 +78,12 @@ export async function POST(request: NextRequest) {
       // Определяем место команды
       const teamTotals = teams.map(t => ({
         teamId: t.id,
-        totalScore: calculateTotalScore(t.id, scores)
+        totalScore: calculateTotalScore(t.id, scores as AggregatedScore[])
       }));
       const sortedScores = teamTotals.sort((a, b) => b.totalScore - a.totalScore);
       const place = sortedScores.findIndex(s => s.teamId === teamId) + 1;
 
-      const certificateData = {
+      const certificateData: TeamCertificateProps = {
         teamName: team.name,
         place: place <= 3 ? place : 0,
         score: totalScore,
@@ -92,11 +99,16 @@ export async function POST(request: NextRequest) {
       };
 
       // Динамический импорт компонента
+      const templates = await getCertificateTemplates();
       const { default: TeamCertificate } = await import('@/components/certificates/TeamCertificate');
       
       // Генерируем PDF
       const pdfStream = await ReactPDF.renderToStream(
-        React.createElement(TeamCertificate, certificateData) as any
+        React.createElement(TeamCertificate, {
+          ...certificateData,
+          titleText: templates.pdf.teamTitle,
+          introText: templates.pdf.teamIntro,
+        }) as React.ReactElement<DocumentProps>
       );
 
       // Конвертируем stream в buffer
@@ -140,7 +152,7 @@ export async function POST(request: NextRequest) {
       const sortedScores = teamTotals.sort((a, b) => b.totalScore - a.totalScore);
       const place = sortedScores.findIndex(s => s.teamId === teamId) + 1;
 
-      const certificateData = {
+      const certificateData: IndividualCertificateProps = {
         participantName,
         teamName: team.name,
         achievement: getAchievementText(place),
@@ -157,11 +169,16 @@ export async function POST(request: NextRequest) {
       };
 
       // Динамический импорт компонента
+      const templates = await getCertificateTemplates();
       const { default: IndividualCertificate } = await import('@/components/certificates/IndividualCertificate');
       
       // Генерируем PDF
       const pdfStream = await ReactPDF.renderToStream(
-        React.createElement(IndividualCertificate, certificateData) as any
+        React.createElement(IndividualCertificate, {
+          ...certificateData,
+          titleText: templates.pdf.individualTitle,
+          introText: templates.pdf.individualIntro,
+        }) as React.ReactElement<DocumentProps>
       );
 
       // Конвертируем stream в buffer
