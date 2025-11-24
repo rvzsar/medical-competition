@@ -1,5 +1,5 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Font, Image } from '@react-pdf/renderer';
 
 // Регистрация шрифтов для поддержки кириллицы
 Font.register({
@@ -216,7 +216,7 @@ const IndividualCertificate: React.FC<IndividualCertificateProps> = ({
 
         <View style={styles.header}>
           <View style={styles.logo}>
-            <Text style={styles.logoText}>⚕</Text>
+            <Image src="/logo.png" style={{ width: 50, height: 50 }} />
           </View>
           <Text style={styles.title}>{titleText || 'ИМЕННОЙ СЕРТИФИКАТ'}</Text>
           <Text style={styles.subtitle}>
