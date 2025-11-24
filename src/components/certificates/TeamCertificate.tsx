@@ -1,6 +1,5 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
-import { LogoSvg } from './LogoSvg';
 
 // Регистрация шрифтов для поддержки кириллицы
 Font.register({
@@ -29,153 +28,77 @@ const styles = StyleSheet.create({
   page: {
     flexDirection: 'column',
     backgroundColor: '#FFFFFF',
-    padding: 30,
+    padding: 0,
     fontFamily: 'Roboto',
   },
-  decorativeBorder: {
-    position: 'absolute',
-    top: 15,
-    left: 15,
-    right: 15,
-    bottom: 15,
-    border: '3px solid #2563EB',
-    borderRadius: 8,
-  },
-  innerBorder: {
-    position: 'absolute',
-    top: 22,
-    left: 22,
-    right: 22,
-    bottom: 22,
-    border: '1px solid #93C5FD',
-    borderRadius: 6,
-  },
-  header: {
-    marginTop: 30,
-    marginBottom: 15,
-    alignItems: 'center',
-  },
-  logo: {
-    width: 60,
-    height: 60,
-    marginBottom: 12,
-    borderRadius: 30,
-    backgroundColor: '#EFF6FF',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoText: {
-    fontSize: 28,
-    color: '#2563EB',
-    fontWeight: 700,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: 700,
-    color: '#1E40AF',
-    marginBottom: 6,
-    textAlign: 'center',
-    letterSpacing: 1,
-  },
-  subtitle: {
-    fontSize: 11,
-    color: '#64748B',
-    textAlign: 'center',
-    marginBottom: 20,
-    paddingHorizontal: 25,
-    lineHeight: 1.5,
-  },
+  // Основная область для печати текста (центр бланка)
   content: {
+    marginTop: 100, // Отступ от верха бланка (где логотип и шапка)
+    marginBottom: 80, // Отступ от низа бланка (где подпись и печать)
+    marginHorizontal: 60,
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 40,
   },
-  awardText: {
-    fontSize: 13,
-    color: '#475569',
+  // Вводный текст
+  introText: {
+    fontSize: 14,
+    color: '#000000',
     textAlign: 'center',
-    marginBottom: 15,
+    marginBottom: 25,
   },
+  // Название команды - главный элемент
   teamName: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: 700,
-    color: '#1E293B',
+    color: '#000000',
     textAlign: 'center',
-    marginBottom: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    backgroundColor: '#F8FAFC',
-    borderRadius: 8,
+    marginBottom: 30,
+    paddingHorizontal: 20,
+    lineHeight: 1.3,
   },
+  // Достижение (место)
   achievement: {
     fontSize: 18,
-    fontWeight: 500,
-    color: '#2563EB',
+    fontWeight: 600,
+    color: '#000000',
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 25,
   },
+  // Блок с баллами
   scoreBox: {
     marginTop: 20,
-    padding: 15,
-    backgroundColor: '#EFF6FF',
-    borderRadius: 8,
-    border: '2px solid #DBEAFE',
+    paddingVertical: 8,
+    paddingHorizontal: 25,
     alignItems: 'center',
   },
   scoreLabel: {
     fontSize: 12,
-    color: '#64748B',
-    marginBottom: 6,
+    color: '#000000',
+    marginBottom: 5,
   },
   scoreValue: {
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: 700,
-    color: '#2563EB',
+    color: '#000000',
   },
+  // Дата внизу слева
   footer: {
-    marginTop: 30,
-    paddingTop: 15,
-    borderTop: '1px solid #E2E8F0',
+    position: 'absolute',
+    bottom: 40,
+    left: 60,
+    right: 60,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
-  },
-  footerColumn: {
-    flex: 1,
   },
   dateText: {
     fontSize: 11,
-    color: '#64748B',
-    marginBottom: 3,
+    color: '#000000',
   },
-  signatureLine: {
-    width: 150,
-    borderTop: '1px solid #CBD5E1',
-    marginTop: 20,
-    marginBottom: 6,
-  },
-  signatureLabel: {
-    fontSize: 9,
-    color: '#94A3B8',
-  },
-  signatureName: {
-    fontSize: 10,
-    color: '#475569',
-    fontWeight: 500,
-    marginTop: 3,
-  },
+  // Номер сертификата внизу справа
   certificateNumber: {
-    fontSize: 9,
-    color: '#94A3B8',
-    textAlign: 'right',
-    marginTop: 8,
-  },
-  medicalSymbol: {
-    fontSize: 24,
-    color: '#2563EB',
-    marginBottom: 10,
+    fontSize: 10,
+    color: '#000000',
   },
 });
 
@@ -197,11 +120,7 @@ const TeamCertificate: React.FC<TeamCertificateProps> = ({
   place,
   score,
   date,
-  eventName,
-  organizerName,
-  organizerTitle,
   certificateNumber,
-  titleText,
   introText,
 }) => {
   const getPlaceText = (place: number): string => {
@@ -217,76 +136,32 @@ const TeamCertificate: React.FC<TeamCertificateProps> = ({
     }
   };
 
-  const getPlaceColor = (place: number): string => {
-    switch (place) {
-      case 1:
-        return '#EAB308';
-      case 2:
-        return '#94A3B8';
-      case 3:
-        return '#CD7F32';
-      default:
-        return '#2563EB';
-    }
-  };
-
   return (
     <Document>
-      <Page size="A4" orientation="portrait" style={styles.page}>
-        <View style={styles.decorativeBorder} />
-        <View style={styles.innerBorder} />
-
-        <View style={styles.header}>
-          <View style={styles.logo}>
-            <LogoSvg />
-          </View>
-          <Text style={styles.title}>{titleText || 'СЕРТИФИКАТ'}</Text>
-          <Text style={styles.subtitle}>
-            {eventName.split('\\n').map((line, index) => (
-              <React.Fragment key={index}>
-                {index > 0 && '\n'}
-                {line}
-              </React.Fragment>
-            ))}
-          </Text>
-        </View>
-
+      <Page size="A4" orientation="landscape" style={styles.page}>
+        {/* Центральная область для печати текста */}
         <View style={styles.content}>
-          <Text style={styles.awardText}>
+          <Text style={styles.introText}>
             {introText || 'Настоящий сертификат подтверждает, что команда'}
           </Text>
           
-          <Text style={styles.teamName}>{teamName}</Text>
+          <Text style={styles.teamName}>«{teamName}»</Text>
 
-          <Text style={[styles.achievement, { color: getPlaceColor(place) }]}>
+          <Text style={styles.achievement}>
             {getPlaceText(place)}
           </Text>
 
-          <Text style={styles.awardText}>
-            в олимпиаде по акушерству и гинекологии
-          </Text>
-
           <View style={styles.scoreBox}>
-            <Text style={styles.scoreLabel}>Итоговый балл</Text>
+            <Text style={styles.scoreLabel}>Итоговый балл:</Text>
             <Text style={styles.scoreValue}>{score.toFixed(2)}</Text>
           </View>
         </View>
 
+        {/* Футер с датой и номером */}
         <View style={styles.footer}>
-          <View style={styles.footerColumn}>
-            <Text style={styles.dateText}>Дата выдачи:</Text>
-            <Text style={styles.dateText}>{date}</Text>
-          </View>
-
-          <View style={[styles.footerColumn, { alignItems: 'flex-end' }]}>
-            <View style={styles.signatureLine} />
-            <Text style={styles.signatureLabel}>Организатор</Text>
-            <Text style={styles.signatureName}>{organizerName}</Text>
-            <Text style={styles.signatureLabel}>{organizerTitle}</Text>
-          </View>
+          <Text style={styles.dateText}>{date}</Text>
+          <Text style={styles.certificateNumber}>№ {certificateNumber}</Text>
         </View>
-
-        <Text style={styles.certificateNumber}>№ {certificateNumber}</Text>
       </Page>
     </Document>
   );
