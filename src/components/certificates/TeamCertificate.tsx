@@ -45,19 +45,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#000000',
     textAlign: 'center',
-    marginBottom: 25,
+    marginBottom: 30,
   },
   // Название команды - главный элемент
   teamName: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: 700,
     color: '#000000',
     textAlign: 'center',
-    marginBottom: 30,
+    marginBottom: 35,
     paddingHorizontal: 20,
     lineHeight: 1.3,
   },
-  // Достижение (место)
+  // Достижение (обычное)
   achievement: {
     fontSize: 13,
     fontWeight: 500,
@@ -69,13 +69,13 @@ const styles = StyleSheet.create({
   },
   // Выделение для призового места
   achievementBold: {
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: 700,
     color: '#000000',
     textAlign: 'center',
     marginBottom: 25,
-    lineHeight: 1.6,
-    paddingHorizontal: 40,
+    lineHeight: 1.5,
+    paddingHorizontal: 35,
   },
   // Блок с баллами
   scoreBox: {
