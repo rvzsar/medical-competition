@@ -66,12 +66,23 @@ const styles = StyleSheet.create({
   },
   // Достижение
   achievement: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: 500,
     color: '#000000',
     textAlign: 'center',
     marginBottom: 20,
-    lineHeight: 1.4,
+    lineHeight: 1.6,
+    paddingHorizontal: 40,
+  },
+  // Выделение для призового места
+  achievementBold: {
+    fontSize: 13,
+    fontWeight: 700,
+    color: '#000000',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 1.6,
+    paddingHorizontal: 40,
   },
   // Специальная награда (если есть)
   specialAward: {
@@ -129,6 +140,11 @@ const IndividualCertificate: React.FC<IndividualCertificateProps> = ({
   certificateNumber,
   introText,
 }) => {
+  // Определяем, является ли это призовым местом
+  const isPrizePlace = achievement.includes('I место') || 
+                       achievement.includes('II место') || 
+                       achievement.includes('III место');
+  
   return (
     <Document>
       <Page size="A4" orientation="landscape" style={styles.page}>
@@ -142,7 +158,9 @@ const IndividualCertificate: React.FC<IndividualCertificateProps> = ({
 
           <Text style={styles.teamInfo}>команда «{teamName}»</Text>
 
-          <Text style={styles.achievement}>{achievement}</Text>
+          <Text style={isPrizePlace ? styles.achievementBold : styles.achievement}>
+            {achievement}
+          </Text>
 
           {specialAward && (
             <View style={styles.specialAward}>

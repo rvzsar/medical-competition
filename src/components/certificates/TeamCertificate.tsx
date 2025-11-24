@@ -59,11 +59,23 @@ const styles = StyleSheet.create({
   },
   // Достижение (место)
   achievement: {
-    fontSize: 18,
-    fontWeight: 600,
+    fontSize: 13,
+    fontWeight: 500,
     color: '#000000',
     textAlign: 'center',
     marginBottom: 25,
+    lineHeight: 1.6,
+    paddingHorizontal: 40,
+  },
+  // Выделение для призового места
+  achievementBold: {
+    fontSize: 13,
+    fontWeight: 700,
+    color: '#000000',
+    textAlign: 'center',
+    marginBottom: 25,
+    lineHeight: 1.6,
+    paddingHorizontal: 40,
   },
   // Блок с баллами
   scoreBox: {
@@ -126,13 +138,13 @@ const TeamCertificate: React.FC<TeamCertificateProps> = ({
   const getPlaceText = (place: number): string => {
     switch (place) {
       case 1:
-        return 'заняла I место';
+        return 'заняла I место в I Межвузовской студенческой олимпиаде по акушерству и гинекологии им. профессора В.В. Горячева';
       case 2:
-        return 'заняла II место';
+        return 'заняла II место в I Межвузовской студенческой олимпиаде по акушерству и гинекологии им. профессора В.В. Горячева';
       case 3:
-        return 'заняла III место';
+        return 'заняла III место в I Межвузовской студенческой олимпиаде по акушерству и гинекологии им. профессора В.В. Горячева';
       default:
-        return 'приняла участие';
+        return 'приняла участие в I Межвузовской студенческой олимпиаде по акушерству и гинекологии им. профессора В.В. Горячева';
     }
   };
 
@@ -147,7 +159,7 @@ const TeamCertificate: React.FC<TeamCertificateProps> = ({
           
           <Text style={styles.teamName}>«{teamName}»</Text>
 
-          <Text style={styles.achievement}>
+          <Text style={place >= 1 && place <= 3 ? styles.achievementBold : styles.achievement}>
             {getPlaceText(place)}
           </Text>
 
