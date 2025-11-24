@@ -78,10 +78,12 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   subtitle: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#64748B',
     textAlign: 'center',
     marginBottom: 20,
+    paddingHorizontal: 25,
+    lineHeight: 1.5,
   },
   content: {
     flex: 1,
