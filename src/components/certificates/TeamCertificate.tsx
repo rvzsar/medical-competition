@@ -204,13 +204,13 @@ const TeamCertificate: React.FC<TeamCertificateProps> = ({
   const getPlaceText = (place: number): string => {
     switch (place) {
       case 1:
-        return 'ПОБЕДИТЕЛЯ (I место)';
+        return 'заняла I место';
       case 2:
-        return 'ПРИЗЕРА (II место)';
+        return 'заняла II место';
       case 3:
-        return 'ПРИЗЕРА (III место)';
+        return 'заняла III место';
       default:
-        return 'УЧАСТНИКА';
+        return 'приняла участие';
     }
   };
 
@@ -249,11 +249,11 @@ const TeamCertificate: React.FC<TeamCertificateProps> = ({
           <Text style={styles.teamName}>{teamName}</Text>
 
           <Text style={[styles.achievement, { color: getPlaceColor(place) }]}>
-            стала {getPlaceText(place)}
+            {getPlaceText(place)}
           </Text>
 
           <Text style={styles.awardText}>
-            олимпиады по акушерству и гинекологии
+            в олимпиаде по акушерству и гинекологии
           </Text>
 
           <View style={styles.scoreBox}>
