@@ -39,13 +39,13 @@ export default function CertificateEmail({
     if (!place) return '';
     switch (place) {
       case 1:
-        return '🥇 Победитель (I место)';
+        return '🥇 I место';
       case 2:
-        return '🥈 Призер (II место)';
+        return '🥈 II место';
       case 3:
-        return '🥉 Призер (III место)';
+        return '🥉 III место';
       default:
-        return '🎖️ Участник';
+        return '🎖️ Участие';
     }
   };
 
@@ -88,12 +88,6 @@ export default function CertificateEmail({
 
             {certificateType === 'team' && teamName && (
               <>
-                {!teamText && (
-                  <Text style={styles.text}>
-                    Ваша команда <strong>{teamName}</strong> показала отличные
-                    результаты.
-                  </Text>
-                )}
                 {place && place <= 3 && (
                   <Section style={styles.achievement}>
                     <Text style={styles.achievementText}>
@@ -105,6 +99,17 @@ export default function CertificateEmail({
                       </Text>
                     )}
                   </Section>
+                )}
+                {!teamText && (
+                  <Text style={styles.text}>
+                    Ваша команда <strong>{teamName}</strong> показала{' '}
+                    {place === 1
+                      ? 'блестящие результаты и заняла первое место'
+                      : place && place <= 3
+                      ? 'отличные результаты и вошла в тройку призеров'
+                      : 'отличные результаты'}
+                    .
+                  </Text>
                 )}
               </>
             )}
