@@ -76,4 +76,9 @@ export interface CertificatePdfTemplateConfig {
 export interface CertificateTemplatesConfig {
   email: CertificateEmailTemplateConfig;
   pdf: CertificatePdfTemplateConfig;
+  organizer: {
+    name: string;
+    title: string;
+    eventName: string;
+  };
 }

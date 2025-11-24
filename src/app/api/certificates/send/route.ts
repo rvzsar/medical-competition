@@ -225,9 +225,9 @@ async function sendSingleCertificate(request: SendCertificateRequest) {
       month: 'long',
       year: 'numeric'
     }),
-    eventName: 'Олимпиада по акушерству и гинекологии',
-    organizerName: 'Кафедра акушерства и гинекологии',
-    organizerTitle: 'Заведующий кафедрой',
+    eventName: templates.organizer.eventName,
+    organizerName: templates.organizer.name,
+    organizerTitle: templates.organizer.title,
     certificateNumber: generateCertificateNumber(),
   };
 
@@ -237,9 +237,9 @@ async function sendSingleCertificate(request: SendCertificateRequest) {
       ? await generateCertificatePDF('team', certificateData as TeamCertificateProps)
       : await generateCertificatePDF('individual', certificateData as IndividualCertificateProps);
 
-  const eventName = 'Олимпиада по акушерству и гинекологии';
-  const organizerName = certificateData.organizerName;
-  const organizerTitle = certificateData.organizerTitle;
+  const eventName = templates.organizer.eventName;
+  const organizerName = templates.organizer.name;
+  const organizerTitle = templates.organizer.title;
 
   const context = {
     recipientName: type === 'team' ? team.name : participantName || '',

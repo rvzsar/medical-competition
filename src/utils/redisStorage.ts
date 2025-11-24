@@ -444,6 +444,11 @@ const DEFAULT_CERTIFICATE_TEMPLATES: CertificateTemplatesConfig = {
     individualTitle: 'ИМЕННОЙ СЕРТИФИКАТ',
     individualIntro: 'Настоящий сертификат выдан',
   },
+  organizer: {
+    name: 'Кафедра акушерства и гинекологии',
+    title: 'Заведующий кафедрой',
+    eventName: 'Олимпиада по акушерству и гинекологии',
+  },
 };
 
 export async function getCertificateTemplates(): Promise<CertificateTemplatesConfig> {
@@ -473,6 +478,11 @@ export async function getCertificateTemplates(): Promise<CertificateTemplatesCon
           parsed.pdf?.individualTitle || DEFAULT_CERTIFICATE_TEMPLATES.pdf.individualTitle,
         individualIntro:
           parsed.pdf?.individualIntro || DEFAULT_CERTIFICATE_TEMPLATES.pdf.individualIntro,
+      },
+      organizer: {
+        name: parsed.organizer?.name || DEFAULT_CERTIFICATE_TEMPLATES.organizer.name,
+        title: parsed.organizer?.title || DEFAULT_CERTIFICATE_TEMPLATES.organizer.title,
+        eventName: parsed.organizer?.eventName || DEFAULT_CERTIFICATE_TEMPLATES.organizer.eventName,
       },
     };
   } catch {
@@ -514,6 +524,17 @@ export async function saveCertificateTemplates(
       individualIntro:
         templates.pdf.individualIntro?.toString().slice(0, 300) ||
         DEFAULT_CERTIFICATE_TEMPLATES.pdf.individualIntro,
+    },
+    organizer: {
+      name:
+        templates.organizer.name?.toString().slice(0, 200) ||
+        DEFAULT_CERTIFICATE_TEMPLATES.organizer.name,
+      title:
+        templates.organizer.title?.toString().slice(0, 200) ||
+        DEFAULT_CERTIFICATE_TEMPLATES.organizer.title,
+      eventName:
+        templates.organizer.eventName?.toString().slice(0, 300) ||
+        DEFAULT_CERTIFICATE_TEMPLATES.organizer.eventName,
     },
   };
 

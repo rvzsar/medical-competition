@@ -83,6 +83,9 @@ export async function POST(request: NextRequest) {
       const sortedScores = teamTotals.sort((a, b) => b.totalScore - a.totalScore);
       const place = sortedScores.findIndex(s => s.teamId === teamId) + 1;
 
+      // Динамический импорт компонента
+      const templates = await getCertificateTemplates();
+
       const certificateData: TeamCertificateProps = {
         teamName: team.name,
         place: place <= 3 ? place : 0,
@@ -92,14 +95,11 @@ export async function POST(request: NextRequest) {
           month: 'long',
           year: 'numeric'
         }),
-        eventName: 'Олимпиада по акушерству и гинекологии',
-        organizerName: 'Кафедра акушерства и гинекологии',
-        organizerTitle: 'Заведующий кафедрой',
+        eventName: templates.organizer.eventName,
+        organizerName: templates.organizer.name,
+        organizerTitle: templates.organizer.title,
         certificateNumber: generateCertificateNumber(),
       };
-
-      // Динамический импорт компонента
-      const templates = await getCertificateTemplates();
       const { default: TeamCertificate } = await import('@/components/certificates/TeamCertificate');
       
       // Генерируем PDF
@@ -152,6 +152,9 @@ export async function POST(request: NextRequest) {
       const sortedScores = teamTotals.sort((a, b) => b.totalScore - a.totalScore);
       const place = sortedScores.findIndex(s => s.teamId === teamId) + 1;
 
+      // Динамический импорт компонента
+      const templates = await getCertificateTemplates();
+
       const certificateData: IndividualCertificateProps = {
         participantName,
         teamName: team.name,
@@ -162,14 +165,11 @@ export async function POST(request: NextRequest) {
           month: 'long',
           year: 'numeric'
         }),
-        eventName: 'Олимпиада по акушерству и гинекологии',
-        organizerName: 'Кафедра акушерства и гинекологии',
-        organizerTitle: 'Заведующий кафедрой',
+        eventName: templates.organizer.eventName,
+        organizerName: templates.organizer.name,
+        organizerTitle: templates.organizer.title,
         certificateNumber: generateCertificateNumber(),
       };
-
-      // Динамический импорт компонента
-      const templates = await getCertificateTemplates();
       const { default: IndividualCertificate } = await import('@/components/certificates/IndividualCertificate');
       
       // Генерируем PDF

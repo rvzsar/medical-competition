@@ -40,6 +40,9 @@ export default function CertificatesPage() {
     pdfTeamIntro: string;
     pdfIndividualTitle: string;
     pdfIndividualIntro: string;
+    organizerName: string;
+    organizerTitle: string;
+    eventName: string;
   } | null>(null);
 
   useEffect(() => {
@@ -286,6 +289,9 @@ export default function CertificatesPage() {
         pdfTeamIntro: t.pdf.teamIntro,
         pdfIndividualTitle: t.pdf.individualTitle,
         pdfIndividualIntro: t.pdf.individualIntro,
+        organizerName: t.organizer.name,
+        organizerTitle: t.organizer.title,
+        eventName: t.organizer.eventName,
       });
     } catch (error) {
       console.error('Ошибка при загрузке шаблонов сертификатов:', error);
@@ -325,6 +331,11 @@ export default function CertificatesPage() {
               teamIntro: templates.pdfTeamIntro,
               individualTitle: templates.pdfIndividualTitle,
               individualIntro: templates.pdfIndividualIntro,
+            },
+            organizer: {
+              name: templates.organizerName,
+              title: templates.organizerTitle,
+              eventName: templates.eventName,
             },
           },
         }),
@@ -597,7 +608,52 @@ export default function CertificatesPage() {
             )}
 
             {templates && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Общие настройки</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Название мероприятия
+                      </label>
+                      <input
+                        type="text"
+                        value={templates.eventName}
+                        onChange={(e) =>
+                          setTemplates({ ...templates, eventName: e.target.value })
+                        }
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        ФИО организатора
+                      </label>
+                      <input
+                        type="text"
+                        value={templates.organizerName}
+                        onChange={(e) =>
+                          setTemplates({ ...templates, organizerName: e.target.value })
+                        }
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Должность организатора
+                      </label>
+                      <input
+                        type="text"
+                        value={templates.organizerTitle}
+                        onChange={(e) =>
+                          setTemplates({ ...templates, organizerTitle: e.target.value })
+                        }
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800 mb-3">Email</h3>
                   <div className="space-y-3">
