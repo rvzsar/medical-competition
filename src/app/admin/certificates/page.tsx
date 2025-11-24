@@ -378,12 +378,20 @@ export default function CertificatesPage() {
                 Генерация и отправка сертификатов участникам олимпиады
               </p>
             </div>
-            <Link
-              href="/admin"
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
-            >
-              ← Назад к админке
-            </Link>
+            <div className="flex gap-3">
+              <Link
+                href="/admin/certificates/bulk"
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+              >
+                📦 Массовая генерация
+              </Link>
+              <Link
+                href="/admin"
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+              >
+                ← Назад к админке
+              </Link>
+            </div>
           </div>
         </div>
 
