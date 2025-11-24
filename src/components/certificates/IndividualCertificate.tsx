@@ -219,7 +219,14 @@ const IndividualCertificate: React.FC<IndividualCertificateProps> = ({
             <Text style={styles.logoText}>⚕</Text>
           </View>
           <Text style={styles.title}>{titleText || 'ИМЕННОЙ СЕРТИФИКАТ'}</Text>
-          <Text style={styles.subtitle}>{eventName}</Text>
+          <Text style={styles.subtitle}>
+            {eventName.split('\\n').map((line, index) => (
+              <React.Fragment key={index}>
+                {index > 0 && '\n'}
+                {line}
+              </React.Fragment>
+            ))}
+          </Text>
         </View>
 
         <View style={styles.content}>
