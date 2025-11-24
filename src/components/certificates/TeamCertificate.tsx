@@ -53,29 +53,34 @@ const styles = StyleSheet.create({
     fontWeight: 700,
     color: '#000000',
     textAlign: 'center',
-    marginBottom: 35,
+    marginBottom: 30,
     paddingHorizontal: 20,
     lineHeight: 1.3,
   },
-  // Достижение (обычное)
-  achievement: {
-    fontSize: 13,
+  // Место (обычное участие)
+  placeText: {
+    fontSize: 16,
     fontWeight: 500,
     color: '#000000',
     textAlign: 'center',
-    marginBottom: 25,
-    lineHeight: 1.6,
-    paddingHorizontal: 40,
+    marginBottom: 20,
   },
-  // Выделение для призового места
-  achievementBold: {
-    fontSize: 16,
+  // Место (призовое - крупно и жирно)
+  placeTextBold: {
+    fontSize: 22,
     fontWeight: 700,
     color: '#000000',
     textAlign: 'center',
-    marginBottom: 25,
+    marginBottom: 20,
+  },
+  // Описание олимпиады (мельче)
+  eventText: {
+    fontSize: 12,
+    fontWeight: 400,
+    color: '#000000',
+    textAlign: 'center',
     lineHeight: 1.5,
-    paddingHorizontal: 35,
+    marginBottom: 20,
   },
   // Блок с баллами
   scoreBox: {
@@ -138,15 +143,21 @@ const TeamCertificate: React.FC<TeamCertificateProps> = ({
   const getPlaceText = (place: number): string => {
     switch (place) {
       case 1:
-        return 'заняла I место в I Межвузовской студенческой олимпиаде по акушерству и гинекологии им. профессора В.В. Горячева';
+        return 'I место';
       case 2:
-        return 'заняла II место в I Межвузовской студенческой олимпиаде по акушерству и гинекологии им. профессора В.В. Горячева';
+        return 'II место';
       case 3:
-        return 'заняла III место в I Межвузовской студенческой олимпиаде по акушерству и гинекологии им. профессора В.В. Горячева';
+        return 'III место';
       default:
-        return 'приняла участие в I Межвузовской студенческой олимпиаде по акушерству и гинекологии им. профессора В.В. Горячева';
+        return 'участие';
     }
   };
+
+  const getPlaceVerb = (place: number): string => {
+    return place >= 1 && place <= 3 ? 'заняла' : 'приняла';
+  };
+
+  const isPrizePlace = place >= 1 && place <= 3;
 
   return (
     <Document>
@@ -159,8 +170,14 @@ const TeamCertificate: React.FC<TeamCertificateProps> = ({
           
           <Text style={styles.teamName}>«{teamName}»</Text>
 
-          <Text style={place >= 1 && place <= 3 ? styles.achievementBold : styles.achievement}>
-            {getPlaceText(place)}
+          <Text style={isPrizePlace ? styles.placeTextBold : styles.placeText}>
+            {getPlaceVerb(place)} {getPlaceText(place)}
+          </Text>
+
+          <Text style={styles.eventText}>
+            в I Межвузовской студенческой олимпиаде{'\n'}
+            по акушерству и гинекологии{'\n'}
+            им. профессора В.В. Горячева
           </Text>
 
           <View style={styles.scoreBox}>

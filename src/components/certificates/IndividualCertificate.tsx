@@ -62,27 +62,32 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#000000',
     textAlign: 'center',
-    marginBottom: 35,
+    marginBottom: 30,
   },
-  // Достижение (обычное)
-  achievement: {
-    fontSize: 13,
+  // Место (обычное участие)
+  placeText: {
+    fontSize: 16,
     fontWeight: 500,
     color: '#000000',
     textAlign: 'center',
     marginBottom: 20,
-    lineHeight: 1.6,
-    paddingHorizontal: 40,
   },
-  // Выделение для призового места
-  achievementBold: {
-    fontSize: 16,
+  // Место (призовое - крупно и жирно)
+  placeTextBold: {
+    fontSize: 22,
     fontWeight: 700,
     color: '#000000',
     textAlign: 'center',
     marginBottom: 20,
+  },
+  // Описание олимпиады (мельче)
+  eventText: {
+    fontSize: 12,
+    fontWeight: 400,
+    color: '#000000',
+    textAlign: 'center',
     lineHeight: 1.5,
-    paddingHorizontal: 35,
+    marginBottom: 20,
   },
   // Специальная награда (если есть)
   specialAward: {
@@ -141,9 +146,12 @@ const IndividualCertificate: React.FC<IndividualCertificateProps> = ({
   introText,
 }) => {
   // Определяем, является ли это призовым местом
-  const isPrizePlace = achievement.includes('I место') || 
-                       achievement.includes('II место') || 
-                       achievement.includes('III место');
+  const isPrizePlace = achievement === 'I место' || 
+                       achievement === 'II место' || 
+                       achievement === 'III место';
+  
+  // Формируем текст "за"
+  const achievementPrefix = achievement === 'участие' ? 'за' : 'за';
   
   return (
     <Document>
@@ -158,8 +166,14 @@ const IndividualCertificate: React.FC<IndividualCertificateProps> = ({
 
           <Text style={styles.teamInfo}>команда «{teamName}»</Text>
 
-          <Text style={isPrizePlace ? styles.achievementBold : styles.achievement}>
-            {achievement}
+          <Text style={isPrizePlace ? styles.placeTextBold : styles.placeText}>
+            {achievementPrefix} {achievement}
+          </Text>
+
+          <Text style={styles.eventText}>
+            в I Межвузовской студенческой олимпиаде{'\n'}
+            по акушерству и гинекологии{'\n'}
+            им. профессора В.В. Горячева
           </Text>
 
           {specialAward && (
