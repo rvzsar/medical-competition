@@ -237,7 +237,10 @@ const TeamCertificate: React.FC<TeamCertificateProps> = ({
 
         <View style={styles.header}>
           <View style={styles.logo}>
-            <Image src="/logo.png" style={{ width: 50, height: 50 }} />
+            <Image 
+              src={`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/logo.png`}
+              style={{ width: 50, height: 50 }} 
+            />
           </View>
           <Text style={styles.title}>{titleText || 'СЕРТИФИКАТ'}</Text>
           <Text style={styles.subtitle}>
