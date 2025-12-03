@@ -22,8 +22,8 @@ const contestNames: Record<string, string> = {
   "outpatient": "III. Амбулаторный прием",
   "obstetric": "III. Акушерское пособие",
   "laparoscopy": "III. Лапароскопия",
-  "mind-battle": "IV. Битва умов",
-  "jury-question": "V. Вопрос от жюри",
+  "mind-battle": "V. Битва умов",
+  "jury-question": "VI. Вопрос от жюри",
 };
 
 export default function ProtocolPage() {

@@ -443,7 +443,7 @@ export default function AdminPage() {
                 href="/admin/contest/mind-battle"
                 className="block bg-orange-100 border border-orange-300 rounded-lg p-4 hover:bg-orange-200"
               >
-                <h3 className="font-semibold text-orange-800">IV конкурс. Битва умов</h3>
+                <h3 className="font-semibold text-orange-800">V конкурс. Битва умов</h3>
                 <p className="text-sm text-orange-600 mt-1">Максимальный балл: 2</p>
               </Link>
 

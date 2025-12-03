@@ -83,7 +83,7 @@ export const CONTESTS: Contest[] = [
   },
   {
     id: 'mind-battle',
-    name: 'IV конкурс. Битва умов',
+    name: 'V конкурс. Битва умов',
     description: 'Ответы на вопросы в парах команд',
     maxScore: 2,
     timeLimit: '1 минута на ответ',
