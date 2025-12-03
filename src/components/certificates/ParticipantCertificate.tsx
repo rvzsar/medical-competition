@@ -31,79 +31,72 @@ Font.register({
   ],
 });
 
-// A5 landscape: 210mm x 148mm (595 x 420 pt)
+// A5 landscape для печати на готовом бланке РЕАВИЗ
+// Текст размещается в центральной области между заголовком "СЕРТИФИКАТ" и подписью/печатью
 const styles = StyleSheet.create({
   page: {
     flexDirection: 'column',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'transparent',
     padding: 0,
     fontFamily: 'Roboto',
-    width: 595,
-    height: 420,
   },
+  // Контент размещается в центре страницы, с отступами от шапки и подписи
   content: {
-    flex: 1,
+    position: 'absolute',
+    top: 95,      // Отступ от верха (под "СЕРТИФИКАТ")
+    left: 60,
+    right: 60,
+    bottom: 85,   // Отступ снизу (над подписью и печатью)
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 60,
-    paddingTop: 40,
-    paddingBottom: 30,
   },
   // Заголовок "ОБ УЧАСТИИ"
   title: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 400,
-    color: '#000000',
+    color: '#333333',
     textAlign: 'center',
-    marginBottom: 40,
-    letterSpacing: 3,
+    marginBottom: 20,
+    letterSpacing: 2,
   },
   // Контейнер для имени с линией
   nameContainer: {
     width: '100%',
     alignItems: 'center',
-    marginBottom: 25,
+    marginBottom: 15,
   },
   // Линия для имени
   nameLine: {
-    width: 380,
-    borderBottom: '1px solid #000000',
-    paddingBottom: 5,
-    marginBottom: 8,
+    width: 320,
+    borderBottom: '1px solid #333333',
+    paddingBottom: 3,
   },
-  // Имя участника (над линией)
+  // Имя участника
   participantName: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 400,
-    color: '#000000',
+    color: '#333333',
     textAlign: 'center',
   },
   // Текст описания олимпиады
   eventText: {
-    fontSize: 12,
-    fontWeight: 400,
-    color: '#000000',
-    textAlign: 'center',
-    lineHeight: 1.5,
-    marginBottom: 50,
-  },
-  // Дата внизу
-  dateContainer: {
-    position: 'absolute',
-    bottom: 35,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-  },
-  dateBox: {
-    backgroundColor: '#D0D0D0',
-    paddingHorizontal: 15,
-    paddingVertical: 5,
-  },
-  dateText: {
     fontSize: 11,
     fontWeight: 400,
-    color: '#000000',
+    color: '#333333',
+    textAlign: 'center',
+    lineHeight: 1.4,
+    marginBottom: 25,
+  },
+  // Дата
+  dateBox: {
+    backgroundColor: '#CCCCCC',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  dateText: {
+    fontSize: 10,
+    fontWeight: 400,
+    color: '#333333',
     textAlign: 'center',
   },
 });
@@ -115,14 +108,6 @@ export interface ParticipantCertificateProps {
 const ParticipantCertificate: React.FC<ParticipantCertificateProps> = ({
   participantName,
 }) => {
-  // Форматирование даты
-  const eventDate = new Date(2025, 10, 4); // 4 ноября 2025
-  const formattedDate = eventDate.toLocaleDateString('ru-RU', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  });
-
   return (
     <Document>
       <Page size="A5" orientation="landscape" style={styles.page}>
@@ -142,12 +127,10 @@ const ParticipantCertificate: React.FC<ParticipantCertificateProps> = ({
             в I Межвузовской студенческой олимпиаде по акушерству и гинекологии{'\n'}
             им. профессора В.В. Горячева.
           </Text>
-        </View>
 
-        {/* Дата внизу */}
-        <View style={styles.dateContainer}>
+          {/* Дата */}
           <View style={styles.dateBox}>
-            <Text style={styles.dateText}>Самара, {formattedDate}</Text>
+            <Text style={styles.dateText}>Самара, 04 ноября 2025 г.</Text>
           </View>
         </View>
       </Page>
