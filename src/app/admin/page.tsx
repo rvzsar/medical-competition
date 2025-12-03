@@ -267,13 +267,26 @@ export default function AdminPage() {
 
         {/* Инструкция для жюри */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
-          <h2 className="text-xl font-semibold text-blue-800 mb-3">📋 Как оценивать олимпиаду</h2>
+          <h2 className="text-xl font-semibold text-blue-800 mb-3">📋 Порядок работы жюри</h2>
           <div className="text-blue-700 space-y-2 text-sm">
-            <p><span className="font-semibold">1.</span> Выберите конкурс из списка справа (Визитка → Клинический случай → Практические навыки → Битва умов)</p>
-            <p><span className="font-semibold">2.</span> На странице конкурса выберите команду из выпадающего списка</p>
-            <p><span className="font-semibold">3.</span> Выставьте оценки по критериям и нажмите "Сохранить оценку"</p>
-            <p><span className="font-semibold">4.</span> Для практических навыков — оцените команду на каждой из 4 станций</p>
-            <p className="text-blue-600 font-medium mt-3">💡 Ваши оценки сохраняются автоматически на сервере. Можно редактировать до блокировки.</p>
+            <p><span className="font-semibold">Шаг 1.</span> Выберите конкурс справа в порядке проведения:</p>
+            <div className="ml-6 space-y-1 text-xs">
+              <p>• <span className="font-medium">I. Визитка</span> — оцените презентацию каждой команды (макс. 6 баллов)</p>
+              <p>• <span className="font-medium">II. Клинический случай</span> — оцените решение задачи (макс. 4 балла)</p>
+              <p>• <span className="font-medium">III. Практические навыки</span> — оцените на 4 станциях (макс. 48 баллов)</p>
+              <p>• <span className="font-medium">V. Битва умов</span> — оцените ответы на вопросы (макс. 2 балла)</p>
+            </div>
+            <p><span className="font-semibold">Шаг 2.</span> На странице конкурса выберите команду из списка</p>
+            <p><span className="font-semibold">Шаг 3.</span> Выставьте баллы по критериям и нажмите "Сохранить оценку"</p>
+            <p><span className="font-semibold">Шаг 4.</span> Повторите для всех команд, затем переходите к следующему конкурсу</p>
+          </div>
+          <div className="mt-4 pt-3 border-t border-blue-200 text-sm">
+            <p className="text-blue-600 font-medium">💡 Подсказки:</p>
+            <ul className="text-blue-700 text-xs mt-1 space-y-1">
+              <li>• Оценки сохраняются на сервере — можно редактировать до блокировки организатором</li>
+              <li>• В практических навыках используйте кнопки навигации для переключения между станциями</li>
+              <li>• Справа в каждом конкурсе видно, какие команды уже оценены</li>
+            </ul>
           </div>
         </div>
 

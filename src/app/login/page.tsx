@@ -136,7 +136,17 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        <div className="mt-8 pt-6 border-t border-gray-200">
+        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h3 className="text-sm font-semibold text-blue-800 mb-2">📋 Что делать после входа</h3>
+          <div className="text-xs text-blue-700 space-y-1">
+            <p>1. Вы попадёте на панель жюри со списком конкурсов</p>
+            <p>2. Выбирайте конкурс и оценивайте команды по критериям</p>
+            <p>3. Оценки сохраняются автоматически на сервере</p>
+            <p>4. Можно редактировать оценки до блокировки организатором</p>
+          </div>
+        </div>
+
+        <div className="mt-4 pt-4 border-t border-gray-200">
           <h3 className="text-sm font-medium text-gray-700 mb-3">Состав жюри:</h3>
           <ul className="text-xs text-gray-600 space-y-2">
             {juryMembers.map((jury) => (

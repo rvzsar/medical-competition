@@ -186,7 +186,7 @@ export default function SuturesStationPage() {
         </header>
 
         {/* Быстрая навигация между станциями */}
-        <div className="mb-6 flex flex-wrap gap-2">
+        <div className="mb-4 flex flex-wrap gap-2">
           <span className="px-3 py-1 bg-blue-600 text-white rounded text-sm">
             Швы ←
           </span>
@@ -199,6 +199,13 @@ export default function SuturesStationPage() {
           <Link href="/admin/contest/practical-skills/laparoscopy" className="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-sm">
             Лапароскопия
           </Link>
+        </div>
+
+        {/* Краткая инструкция */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
+          <p className="text-blue-700 text-sm">
+            <span className="font-semibold">Порядок:</span> Выберите команду → Оцените по критериям → Сохраните → Переключитесь на другую станцию кнопками выше
+          </p>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8">
