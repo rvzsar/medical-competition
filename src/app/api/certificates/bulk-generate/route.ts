@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import React from 'react';
 import ReactPDF, { DocumentProps } from '@react-pdf/renderer';
 import JSZip from 'jszip';
-import { getTeams, getAggregatedScores, getCertificateTemplates } from '@/utils/redisStorage';
+import { getTeams, getAggregatedScores, getCertificateTemplates, calculateTotalScore } from '@/utils/redisStorage';
 import type { IndividualCertificateProps } from '@/components/certificates/IndividualCertificate';
 
 interface BulkGenerateRequest {
@@ -33,10 +33,9 @@ function getAchievementText(place: number): string {
   }
 }
 
-// Функция для расчета общего балла команды
-function calculateTotalScore(teamId: string, allScores: any[]): number {
-  const teamScores = allScores.filter(s => s.teamId === teamId);
-  return teamScores.reduce((sum, score) => sum + score.averageScore, 0);
+// Функция для расчета общего балла команды (обертка для импортированной функции)
+function getTeamTotalScore(teamId: string, allScores: any[]): number {
+  return calculateTotalScore(allScores, teamId);
 }
 
 export async function POST(request: NextRequest) {
@@ -84,7 +83,7 @@ export async function POST(request: NextRequest) {
     // Определяем место команды
     const teamTotals = teams.map(t => ({
       teamId: t.id,
-      totalScore: calculateTotalScore(t.id, scores)
+      totalScore: getTeamTotalScore(t.id, scores)
     }));
     const sortedScores = teamTotals.sort((a, b) => b.totalScore - a.totalScore);
     const place = sortedScores.findIndex(s => s.teamId === teamId) + 1;
