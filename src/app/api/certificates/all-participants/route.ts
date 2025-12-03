@@ -6,28 +6,30 @@ import { Document, Packer, Paragraph, TextRun, AlignmentType, PageOrientation } 
 import { getTeams } from '@/utils/redisStorage';
 
 // Генерация DOCX сертификата участника
-// A5 landscape: 210mm x 148mm
-// 1 мм = 56.7 twips (1440 twips = 1 inch, 1 inch = 25.4mm)
+// A5: 148mm x 210mm (portrait), для landscape переворачиваем
+// В docx для landscape указываем portrait размеры, библиотека сама перевернёт
 async function generateParticipantDocx(participantName: string): Promise<Buffer> {
   const doc = new Document({
     sections: [{
       properties: {
         page: {
           size: {
-            // A5 landscape: ширина 210мм, высота 148мм
-            width: 11906,  // 210mm в twips (210 * 56.7)
-            height: 8391,  // 148mm в twips (148 * 56.7)
+            // A5 portrait размеры (библиотека перевернёт для landscape)
+            // 148mm x 210mm -> станет 210mm x 148mm
+            width: 8391,   // 148mm в twips
+            height: 11906, // 210mm в twips
             orientation: PageOrientation.LANDSCAPE,
           },
           margin: {
-            // Отступы для размещения текста в центре бланка
-            // Сверху ~67мм (под заголовком "СЕРТИФИКАТ")
-            top: 3800,
-            // Снизу ~60мм (над подписью ректора и печатью)
-            bottom: 3400,
-            // По бокам ~25мм
-            left: 1420,
-            right: 1420,
+            // После поворота: top/bottom - это короткие стороны (148мм)
+            // left/right - это длинные стороны (210мм)
+            // Сверху ~45мм (под заголовком "СЕРТИФИКАТ")
+            top: 2550,
+            // Снизу ~40мм (над подписью ректора и печатью)
+            bottom: 2270,
+            // По бокам ~30мм
+            left: 1700,
+            right: 1700,
           },
         },
       },
