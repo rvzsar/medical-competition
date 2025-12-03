@@ -101,10 +101,10 @@ export default function HomePage() {
 
             <div className="border-l-4 border-orange-500 pl-4">
               <h3 className="text-xl font-semibold text-gray-800">
-                IV конкурс. Битва умов
+                V конкурс. Битва умов
               </h3>
               <p className="text-gray-600 mb-2">
-                Вопросы командам-соперникам по тематикам
+                Вопросы командам-соперникам по тематикам: латинские термины, акушерство и гинекология в искусстве и литературе, ученые
               </p>
               <p className="text-sm text-gray-500">
                 Максимальный балл: 2
