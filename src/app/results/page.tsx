@@ -59,9 +59,21 @@ export default function ResultsPage() {
 
   const getTeamTotalFromState = (teamId: string): number => {
     const teamScores = aggregatedScores.filter((s: AggregatedScore) => s.teamId === teamId);
-    const total = teamScores.reduce((sum: number, score: AggregatedScore) => sum + score.averageScore, 0);
-    // Ограничиваем максимумом 60 баллов (Requirements: 9.1, 9.2)
-    return Math.min(Math.round(total * 10) / 10, MAX_TOTAL_SCORE);
+    
+    // Отделяем "Вопрос от жюри" от основных конкурсов
+    const juryQuestionScore = teamScores.find((s: AggregatedScore) => s.contestId === 'jury-question');
+    const mainScores = teamScores.filter((s: AggregatedScore) => s.contestId !== 'jury-question');
+    
+    // Основные баллы ограничены 60 (Requirements: 9.1, 9.2)
+    const mainTotal = Math.min(
+      mainScores.reduce((sum: number, score: AggregatedScore) => sum + score.averageScore, 0),
+      MAX_TOTAL_SCORE
+    );
+    
+    // "Вопрос от жюри" добавляется сверх лимита для разрешения спорных ситуаций (Requirements: 9.3)
+    const juryBonus = juryQuestionScore ? juryQuestionScore.averageScore : 0;
+    
+    return Math.round((mainTotal + juryBonus) * 10) / 10;
   };
 
   // Получение суммы баллов за практические навыки

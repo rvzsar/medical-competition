@@ -102,7 +102,7 @@ export const CONTESTS: Contest[] = [
   },
   {
     id: 'jury-question',
-    name: 'V конкурс. Вопрос от жюри',
+    name: 'VI конкурс. Вопрос от жюри',
     description: 'Дополнительный конкурс для спорных ситуаций',
     maxScore: 2,
     timeLimit: '1 минута',

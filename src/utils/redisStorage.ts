@@ -147,16 +147,26 @@ async function updateAggregatedScores() {
  * Расчет итогового балла команды
  * Учитывает все 6 конкурсов: Визитка (6) + Клинический случай (4) + 
  * 4 станции практических навыков (48) + Битва умов (2) = 60 баллов
- * Requirements: 9.1, 9.2
+ * "Вопрос от жюри" добавляется сверх лимита для разрешения спорных ситуаций
+ * Requirements: 9.1, 9.2, 9.3
  */
 export function calculateTotalScore(aggregatedScores: AggregatedScore[], teamId: string): number {
   const teamScores = aggregatedScores.filter(s => s.teamId === teamId);
   
-  // Суммируем баллы по всем конкурсам и станциям
-  const total = teamScores.reduce((sum, score) => sum + score.averageScore, 0);
+  // Отделяем "Вопрос от жюри" от основных конкурсов
+  const juryQuestionScore = teamScores.find(s => s.contestId === 'jury-question');
+  const mainScores = teamScores.filter(s => s.contestId !== 'jury-question');
   
-  // Ограничиваем максимумом 60 баллов
-  return Math.min(Math.round(total * 10) / 10, MAX_TOTAL_SCORE);
+  // Основные баллы ограничены 60
+  const mainTotal = Math.min(
+    mainScores.reduce((sum, score) => sum + score.averageScore, 0),
+    MAX_TOTAL_SCORE
+  );
+  
+  // "Вопрос от жюри" добавляется сверх лимита для разрешения спорных ситуаций
+  const juryBonus = juryQuestionScore ? juryQuestionScore.averageScore : 0;
+  
+  return Math.round((mainTotal + juryBonus) * 10) / 10;
 }
 
 /**
@@ -196,10 +206,12 @@ export function getTeamScoreBreakdown(aggregatedScores: AggregatedScore[], teamI
   const mindBattle = getScore('mind-battle');
   const juryQuestion = getScore('jury-question');
 
-  const total = Math.min(
-    visitCard + clinicalCase + practicalTotal + mindBattle + juryQuestion,
+  // Основные баллы ограничены 60, "Вопрос от жюри" добавляется сверх лимита
+  const mainTotal = Math.min(
+    visitCard + clinicalCase + practicalTotal + mindBattle,
     MAX_TOTAL_SCORE
   );
+  const total = mainTotal + juryQuestion;
 
   return {
     teamId,
