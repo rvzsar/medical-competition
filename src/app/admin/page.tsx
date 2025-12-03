@@ -265,6 +265,18 @@ export default function AdminPage() {
           </div>
         </header>
 
+        {/* Инструкция для жюри */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+          <h2 className="text-xl font-semibold text-blue-800 mb-3">📋 Как оценивать олимпиаду</h2>
+          <div className="text-blue-700 space-y-2 text-sm">
+            <p><span className="font-semibold">1.</span> Выберите конкурс из списка справа (Визитка → Клинический случай → Практические навыки → Битва умов)</p>
+            <p><span className="font-semibold">2.</span> На странице конкурса выберите команду из выпадающего списка</p>
+            <p><span className="font-semibold">3.</span> Выставьте оценки по критериям и нажмите "Сохранить оценку"</p>
+            <p><span className="font-semibold">4.</span> Для практических навыков — оцените команду на каждой из 4 станций</p>
+            <p className="text-blue-600 font-medium mt-3">💡 Ваши оценки сохраняются автоматически на сервере. Можно редактировать до блокировки.</p>
+          </div>
+        </div>
+
         {/* Резервное копирование данных */}
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8">
           <h2 className="text-xl font-semibold text-yellow-800 mb-4">💾 Резервное копирование данных</h2>

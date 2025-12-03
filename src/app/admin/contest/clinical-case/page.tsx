@@ -249,6 +249,18 @@ export default function ClinicalCaseContestPage() {
           </div>
         </header>
 
+        {/* Инструкция */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <h3 className="font-semibold text-blue-800 mb-2">📋 Как оценивать</h3>
+          <div className="text-blue-700 text-sm space-y-1">
+            <p><span className="font-semibold">1.</span> Выберите команду из выпадающего списка слева</p>
+            <p><span className="font-semibold">2.</span> Оцените качество ответа по шкале 0-3 балла</p>
+            <p><span className="font-semibold">3.</span> Если команда ответила досрочно (менее 10 мин) — поставьте галочку для бонуса +1</p>
+            <p><span className="font-semibold">4.</span> Нажмите "Сохранить оценку"</p>
+            <p className="text-blue-600 font-medium mt-2">💡 Внизу страницы есть подробные критерии оценки для каждого балла.</p>
+          </div>
+        </div>
+
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Форма оценки */}
           <div className="bg-white rounded-lg shadow-lg p-6">
@@ -288,7 +300,7 @@ export default function ClinicalCaseContestPage() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Качество ответа (Requirements 2.1)
+                        Качество ответа
                       </label>
                       <select
                         value={currentScore.explanation}

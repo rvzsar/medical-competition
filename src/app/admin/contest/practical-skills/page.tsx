@@ -109,6 +109,18 @@ export default function PracticalSkillsContestPage() {
           </div>
         </header>
 
+        {/* Инструкция */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <h3 className="font-semibold text-blue-800 mb-2">📋 Как оценивать практические навыки</h3>
+          <div className="text-blue-700 text-sm space-y-1">
+            <p><span className="font-semibold">1.</span> Нажмите на карточку станции ниже, чтобы перейти к оценке</p>
+            <p><span className="font-semibold">2.</span> На странице станции выберите команду из списка</p>
+            <p><span className="font-semibold">3.</span> Выставьте баллы по каждому критерию и нажмите "Сохранить"</p>
+            <p><span className="font-semibold">4.</span> Используйте кнопки навигации вверху страницы для быстрого переключения между станциями</p>
+            <p className="text-blue-600 font-medium mt-2">💡 В таблице ниже видно, какие команды вы уже оценили на каждой станции</p>
+          </div>
+        </div>
+
         {/* Станции для оценки */}
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">Выберите станцию для оценки</h2>

@@ -231,6 +231,18 @@ export default function VisitCardContestPage() {
           </div>
         </header>
 
+        {/* Инструкция */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <h3 className="font-semibold text-blue-800 mb-2">📋 Как оценивать</h3>
+          <div className="text-blue-700 text-sm space-y-1">
+            <p><span className="font-semibold">1.</span> Выберите команду из выпадающего списка слева</p>
+            <p><span className="font-semibold">2.</span> Выставьте баллы по каждому критерию (целостность, культура, творчество, оригинальность)</p>
+            <p><span className="font-semibold">3.</span> Если команда превысила время — укажите штраф</p>
+            <p><span className="font-semibold">4.</span> Нажмите "Сохранить оценку" — кнопка станет активной после изменений</p>
+            <p className="text-blue-600 font-medium mt-2">💡 Справа видны все команды и их текущие оценки. Можно редактировать уже выставленные баллы.</p>
+          </div>
+        </div>
+
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Форма оценки */}
           <div className="bg-white rounded-lg shadow-lg p-6">

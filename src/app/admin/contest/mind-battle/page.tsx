@@ -221,6 +221,17 @@ export default function MindBattleContestPage() {
           </div>
         </header>
 
+        {/* Инструкция */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <h3 className="font-semibold text-blue-800 mb-2">📋 Как оценивать</h3>
+          <div className="text-blue-700 text-sm space-y-1">
+            <p><span className="font-semibold">1.</span> Выберите команду, которая ОТВЕЧАЕТ на вопрос</p>
+            <p><span className="font-semibold">2.</span> Оцените качество ответа: 0 (неверный), 1 (с неточностями), 2 (полный верный)</p>
+            <p><span className="font-semibold">3.</span> Нажмите "Сохранить оценку"</p>
+            <p className="text-blue-600 font-medium mt-2">💡 Оценивается команда, которая отвечает, а не та, которая задаёт вопрос.</p>
+          </div>
+        </div>
+
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Форма оценки */}
           <div className="bg-white rounded-lg shadow-lg p-6">
