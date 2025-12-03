@@ -171,11 +171,32 @@ export default function ObstetricStationPage() {
                 <p className="text-sm text-blue-600 mt-1">Оценивает: {currentJury.name}</p>
               )}
             </div>
-            <Link href="/admin" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">
-              Назад к панели жюри
-            </Link>
+            <div className="flex gap-2">
+              <Link href="/admin/contest/practical-skills" className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 text-sm">
+                ← Все станции
+              </Link>
+              <Link href="/admin" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">
+                Панель жюри
+              </Link>
+            </div>
           </div>
         </header>
+
+        {/* Быстрая навигация между станциями */}
+        <div className="mb-6 flex flex-wrap gap-2">
+          <Link href="/admin/contest/practical-skills/sutures" className="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-sm">
+            Швы
+          </Link>
+          <Link href="/admin/contest/practical-skills/outpatient" className="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-sm">
+            Амбулаторный
+          </Link>
+          <span className="px-3 py-1 bg-blue-600 text-white rounded text-sm">
+            Акушерское ←
+          </span>
+          <Link href="/admin/contest/practical-skills/laparoscopy" className="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-sm">
+            Лапароскопия
+          </Link>
+        </div>
 
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Форма оценки */}
