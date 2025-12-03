@@ -2,7 +2,95 @@ import { NextRequest, NextResponse } from 'next/server';
 import React from 'react';
 import ReactPDF, { DocumentProps } from '@react-pdf/renderer';
 import JSZip from 'jszip';
+import { Document, Packer, Paragraph, TextRun, AlignmentType, PageOrientation } from 'docx';
 import { getTeams } from '@/utils/redisStorage';
+
+// Генерация DOCX сертификата участника
+async function generateParticipantDocx(participantName: string): Promise<Buffer> {
+  const doc = new Document({
+    sections: [{
+      properties: {
+        page: {
+          size: {
+            width: 8419, // A5 width in twips (148mm)
+            height: 5953, // A5 height in twips (210mm) - landscape
+            orientation: PageOrientation.LANDSCAPE,
+          },
+          margin: {
+            top: 1800,    // ~63mm от верха (под "СЕРТИФИКАТ")
+            bottom: 1600, // ~56mm от низа (над подписью)
+            left: 1000,
+            right: 1000,
+          },
+        },
+      },
+      children: [
+        // Заголовок "ОБ УЧАСТИИ"
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 400 },
+          children: [
+            new TextRun({
+              text: 'ОБ УЧАСТИИ',
+              size: 28, // 14pt
+              font: 'Times New Roman',
+            }),
+          ],
+        }),
+        // Имя участника с подчеркиванием
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 200 },
+          children: [
+            new TextRun({
+              text: participantName,
+              size: 26, // 13pt
+              font: 'Times New Roman',
+              underline: {},
+            }),
+          ],
+        }),
+        // Описание олимпиады
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 100 },
+          children: [
+            new TextRun({
+              text: 'в I Межвузовской студенческой олимпиаде по акушерству и гинекологии',
+              size: 22, // 11pt
+              font: 'Times New Roman',
+            }),
+          ],
+        }),
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 400 },
+          children: [
+            new TextRun({
+              text: 'им. профессора В.В. Горячева.',
+              size: 22,
+              font: 'Times New Roman',
+            }),
+          ],
+        }),
+        // Дата
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          children: [
+            new TextRun({
+              text: 'Самара, 04 ноября 2025 г.',
+              size: 20, // 10pt
+              font: 'Times New Roman',
+              highlight: 'lightGray',
+            }),
+          ],
+        }),
+      ],
+    }],
+  });
+
+  return await Packer.toBuffer(doc);
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,7 +100,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { teamIds } = body; // Опционально: массив ID команд для фильтрации
+    const { teamIds, format = 'pdf' } = body; // format: 'pdf' или 'docx'
 
     // Получаем все команды
     const teams = await getTeams();
@@ -40,8 +128,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Ограничение для Vercel (10 секунд timeout)
-    const MAX_PARTICIPANTS = 15;
+    // Ограничение для Vercel
+    const MAX_PARTICIPANTS = format === 'docx' ? 30 : 15; // DOCX быстрее генерируется
     if (allParticipants.length > MAX_PARTICIPANTS) {
       return NextResponse.json(
         { 
@@ -55,33 +143,47 @@ export async function POST(request: NextRequest) {
 
     // Создаем ZIP архив
     const zip = new JSZip();
-    const { default: ParticipantCertificate } = await import(
-      '@/components/certificates/ParticipantCertificate'
-    );
+    const fileExtension = format === 'docx' ? 'docx' : 'pdf';
 
-    // Генерируем сертификат для каждого участника
-    for (const participant of allParticipants) {
-      const pdfStream = await ReactPDF.renderToStream(
-        React.createElement(ParticipantCertificate, {
-          participantName: participant.name,
-        }) as React.ReactElement<DocumentProps>
+    if (format === 'docx') {
+      // Генерация DOCX
+      for (const participant of allParticipants) {
+        const docxBuffer = await generateParticipantDocx(participant.name);
+        
+        const safeTeamName = participant.teamName.replace(/[^a-zA-Zа-яА-ЯёЁ0-9]/g, '_');
+        const safeName = participant.name.replace(/[^a-zA-Zа-яА-ЯёЁ0-9]/g, '_');
+        const fileName = `${safeTeamName}/${safeName}.${fileExtension}`;
+        
+        zip.file(fileName, docxBuffer);
+      }
+    } else {
+      // Генерация PDF
+      const { default: ParticipantCertificate } = await import(
+        '@/components/certificates/ParticipantCertificate'
       );
 
-      const chunks: Buffer[] = [];
-      await new Promise<void>((resolve, reject) => {
-        pdfStream.on('data', (chunk: Buffer) => chunks.push(chunk));
-        pdfStream.on('end', () => resolve());
-        pdfStream.on('error', (error: Error) => reject(error));
-      });
+      for (const participant of allParticipants) {
+        const pdfStream = await ReactPDF.renderToStream(
+          React.createElement(ParticipantCertificate, {
+            participantName: participant.name,
+          }) as React.ReactElement<DocumentProps>
+        );
 
-      const pdfBuffer = Buffer.concat(chunks);
+        const chunks: Buffer[] = [];
+        await new Promise<void>((resolve, reject) => {
+          pdfStream.on('data', (chunk: Buffer) => chunks.push(chunk));
+          pdfStream.on('end', () => resolve());
+          pdfStream.on('error', (error: Error) => reject(error));
+        });
 
-      // Имя файла: Команда_Участник.pdf
-      const safeTeamName = participant.teamName.replace(/[^a-zA-Zа-яА-ЯёЁ0-9]/g, '_');
-      const safeName = participant.name.replace(/[^a-zA-Zа-яА-ЯёЁ0-9]/g, '_');
-      const fileName = `${safeTeamName}/${safeName}.pdf`;
-      
-      zip.file(fileName, pdfBuffer);
+        const pdfBuffer = Buffer.concat(chunks);
+
+        const safeTeamName = participant.teamName.replace(/[^a-zA-Zа-яА-ЯёЁ0-9]/g, '_');
+        const safeName = participant.name.replace(/[^a-zA-Zа-яА-ЯёЁ0-9]/g, '_');
+        const fileName = `${safeTeamName}/${safeName}.${fileExtension}`;
+        
+        zip.file(fileName, pdfBuffer);
+      }
     }
 
     // Генерируем ZIP
@@ -90,7 +192,7 @@ export async function POST(request: NextRequest) {
     return new NextResponse(zipBuffer as unknown as BodyInit, {
       headers: {
         'Content-Type': 'application/zip',
-        'Content-Disposition': `attachment; filename="certificates-participants.zip"`,
+        'Content-Disposition': `attachment; filename="certificates-participants-${format}.zip"`,
       },
     });
   } catch (error) {

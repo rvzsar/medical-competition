@@ -10,11 +10,14 @@ interface TeamParticipants {
   count: number;
 }
 
+type FileFormat = 'pdf' | 'docx';
+
 export default function ParticipantCertificatesPage() {
   const [teams, setTeams] = useState<TeamParticipants[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
   const [generating, setGenerating] = useState(false);
+  const [format, setFormat] = useState<FileFormat>('pdf');
   const [message, setMessage] = useState<{
     type: 'success' | 'error' | 'info';
     text: string;
@@ -46,6 +49,9 @@ export default function ParticipantCertificatesPage() {
         .filter((t) => selectedTeams.includes(t.teamId))
         .reduce((sum, t) => sum + t.count, 0);
 
+  // Лимит зависит от формата (DOCX быстрее)
+  const maxLimit = format === 'docx' ? 30 : 15;
+
   const handleToggleTeam = (teamId: string) => {
     setSelectedTeams((prev) =>
       prev.includes(teamId)
@@ -63,10 +69,10 @@ export default function ParticipantCertificatesPage() {
   };
 
   const handleGenerate = async () => {
-    if (selectedCount > 15) {
+    if (selectedCount > maxLimit) {
       setMessage({
         type: 'error',
-        text: `Выбрано ${selectedCount} участников. Максимум 15 за раз. Выберите меньше команд.`,
+        text: `Выбрано ${selectedCount} участников. Максимум ${maxLimit} за раз для ${format.toUpperCase()}. Выберите меньше команд.`,
       });
       return;
     }
@@ -80,6 +86,7 @@ export default function ParticipantCertificatesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           teamIds: selectedTeams.length > 0 ? selectedTeams : undefined,
+          format,
         }),
       });
 
@@ -88,7 +95,7 @@ export default function ParticipantCertificatesPage() {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `certificates-participants-${Date.now()}.zip`;
+        a.download = `certificates-participants-${format}-${Date.now()}.zip`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -96,7 +103,7 @@ export default function ParticipantCertificatesPage() {
 
         setMessage({
           type: 'success',
-          text: `Успешно сгенерировано ${selectedCount} сертификатов участников`,
+          text: `Успешно сгенерировано ${selectedCount} сертификатов (${format.toUpperCase()})`,
         });
       } else {
         const error = await response.json();
@@ -137,7 +144,7 @@ export default function ParticipantCertificatesPage() {
               🎓 Сертификаты участников
             </h1>
             <p className="text-gray-600">
-              Генерация простых сертификатов за участие для всех участников
+              Генерация сертификатов за участие (A5 landscape для печати на бланке)
             </p>
           </div>
 
@@ -150,6 +157,53 @@ export default function ParticipantCertificatesPage() {
               <span className="text-indigo-600 font-medium">
                 Выбрано: {selectedCount}
               </span>
+            </div>
+          </div>
+
+          {/* Format Selection */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Формат файлов
+            </label>
+            <div className="flex gap-4">
+              <label className={`flex-1 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                format === 'pdf' 
+                  ? 'border-indigo-500 bg-indigo-50' 
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}>
+                <input
+                  type="radio"
+                  name="format"
+                  value="pdf"
+                  checked={format === 'pdf'}
+                  onChange={() => setFormat('pdf')}
+                  className="sr-only"
+                />
+                <div className="text-center">
+                  <span className="text-2xl">📄</span>
+                  <p className="font-medium mt-1">PDF</p>
+                  <p className="text-xs text-gray-500">Макс. 15 файлов</p>
+                </div>
+              </label>
+              <label className={`flex-1 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                format === 'docx' 
+                  ? 'border-indigo-500 bg-indigo-50' 
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}>
+                <input
+                  type="radio"
+                  name="format"
+                  value="docx"
+                  checked={format === 'docx'}
+                  onChange={() => setFormat('docx')}
+                  className="sr-only"
+                />
+                <div className="text-center">
+                  <span className="text-2xl">📝</span>
+                  <p className="font-medium mt-1">DOCX (Word)</p>
+                  <p className="text-xs text-gray-500">Макс. 30 файлов, редактируемый</p>
+                </div>
+              </label>
             </div>
           </div>
 
@@ -169,11 +223,11 @@ export default function ParticipantCertificatesPage() {
           )}
 
           {/* Warning */}
-          {selectedCount > 15 && (
+          {selectedCount > maxLimit && (
             <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
               <p className="text-sm text-yellow-800">
                 ⚠️ <strong>Внимание:</strong> Выбрано {selectedCount}{' '}
-                участников. Максимум 15 за один запрос. Выберите меньше команд.
+                участников. Максимум {maxLimit} за один запрос для {format.toUpperCase()}. Выберите меньше команд.
               </p>
             </div>
           )}
@@ -227,9 +281,9 @@ export default function ParticipantCertificatesPage() {
           {/* Generate Button */}
           <button
             onClick={handleGenerate}
-            disabled={generating || selectedCount === 0 || selectedCount > 15}
+            disabled={generating || selectedCount === 0 || selectedCount > maxLimit}
             className={`w-full py-3 px-6 rounded-lg font-medium transition-colors ${
-              generating || selectedCount === 0 || selectedCount > 15
+              generating || selectedCount === 0 || selectedCount > maxLimit
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 : 'bg-green-600 text-white hover:bg-green-700'
             }`}
@@ -259,7 +313,7 @@ export default function ParticipantCertificatesPage() {
                 Генерация...
               </span>
             ) : (
-              `🎓 Скачать ${selectedCount} сертификатов участников (ZIP)`
+              `🎓 Скачать ${selectedCount} сертификатов (${format.toUpperCase()}, ZIP)`
             )}
           </button>
 
@@ -285,12 +339,20 @@ export default function ParticipantCertificatesPage() {
             </div>
           </div>
 
-          {/* Limit info */}
-          <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <p className="text-sm text-gray-600">
-              <strong>⚡ Ограничение:</strong> Максимум 15 сертификатов за один
-              запрос. Файлы организованы по папкам команд.
-            </p>
+          {/* Format comparison */}
+          <div className="mt-4 grid grid-cols-2 gap-4">
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <p className="text-sm font-medium text-gray-700 mb-1">📄 PDF</p>
+              <p className="text-xs text-gray-500">
+                Готов к печати, нельзя редактировать
+              </p>
+            </div>
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <p className="text-sm font-medium text-gray-700 mb-1">📝 DOCX</p>
+              <p className="text-xs text-gray-500">
+                Можно открыть в Word и подправить
+              </p>
+            </div>
           </div>
         </div>
       </div>

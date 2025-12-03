@@ -24,101 +24,90 @@ Font.register({
   ],
 });
 
+// A5 landscape для печати на готовом бланке РЕАВИЗ
 const styles = StyleSheet.create({
   page: {
     flexDirection: 'column',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'transparent',
     padding: 0,
     fontFamily: 'Roboto',
   },
-  // Основная область для печати текста (центр бланка)
+  // Контент размещается в центре страницы, с отступами от шапки и подписи
   content: {
-    marginTop: 100, // Отступ от верха бланка (где логотип и шапка)
-    marginBottom: 80, // Отступ от низа бланка (где подпись и печать)
-    marginHorizontal: 60,
-    flex: 1,
+    position: 'absolute',
+    top: 95,
+    left: 50,
+    right: 50,
+    bottom: 85,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  // Вводный текст
-  introText: {
-    fontSize: 14,
-    color: '#000000',
-    textAlign: 'center',
-    marginBottom: 30,
-  },
   // Имя участника - главный элемент
   participantName: {
-    fontSize: 26,
+    fontSize: 16,
     fontWeight: 700,
-    color: '#000000',
+    color: '#333333',
     textAlign: 'center',
-    marginBottom: 15,
-    paddingHorizontal: 20,
-    lineHeight: 1.3,
+    marginBottom: 8,
+    lineHeight: 1.2,
   },
   // Информация о команде
   teamInfo: {
-    fontSize: 12,
-    color: '#000000',
+    fontSize: 10,
+    color: '#333333',
     textAlign: 'center',
-    marginBottom: 30,
+    marginBottom: 15,
   },
   // Место (обычное участие)
   placeText: {
-    fontSize: 16,
-    fontWeight: 500,
-    color: '#000000',
+    fontSize: 12,
+    fontWeight: 400,
+    color: '#333333',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 12,
   },
   // Место (призовое - крупно и жирно)
   placeTextBold: {
-    fontSize: 22,
+    fontSize: 16,
     fontWeight: 700,
-    color: '#000000',
+    color: '#333333',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 12,
   },
-  // Описание олимпиады (мельче)
+  // Описание олимпиады
   eventText: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: 400,
-    color: '#000000',
+    color: '#333333',
     textAlign: 'center',
-    lineHeight: 1.5,
-    marginBottom: 20,
+    lineHeight: 1.4,
+    marginBottom: 15,
   },
-  // Специальная награда (если есть)
+  // Специальная награда
   specialAward: {
-    marginTop: 25,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    marginTop: 10,
+    paddingVertical: 5,
+    paddingHorizontal: 15,
     alignItems: 'center',
   },
   specialAwardText: {
-    fontSize: 13,
-    fontWeight: 600,
-    color: '#000000',
+    fontSize: 10,
+    fontWeight: 500,
+    color: '#333333',
     textAlign: 'center',
   },
-  // Дата внизу слева
-  footer: {
-    position: 'absolute',
-    bottom: 40,
-    left: 60,
-    right: 60,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  // Дата внизу
+  dateBox: {
+    backgroundColor: '#CCCCCC',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    marginTop: 10,
   },
   dateText: {
-    fontSize: 11,
-    color: '#000000',
-  },
-  // Номер сертификата внизу справа
-  certificateNumber: {
-    fontSize: 10,
-    color: '#000000',
+    fontSize: 9,
+    fontWeight: 400,
+    color: '#333333',
+    textAlign: 'center',
   },
 });
 
@@ -141,52 +130,44 @@ const IndividualCertificate: React.FC<IndividualCertificateProps> = ({
   teamName,
   achievement,
   specialAward,
-  date,
-  certificateNumber,
-  introText,
 }) => {
   // Определяем, является ли это призовым местом
   const isPrizePlace = achievement === 'I место' || 
                        achievement === 'II место' || 
                        achievement === 'III место';
   
-  // Формируем текст "за"
-  const achievementPrefix = achievement === 'участие' ? 'за' : 'за';
-  
   return (
     <Document>
-      <Page size="A4" orientation="landscape" style={styles.page}>
-        {/* Центральная область для печати текста */}
+      <Page size="A5" orientation="landscape" style={styles.page}>
         <View style={styles.content}>
-          <Text style={styles.introText}>
-            {introText || 'Настоящий сертификат выдан'}
-          </Text>
-          
+          {/* Имя участника */}
           <Text style={styles.participantName}>{participantName}</Text>
 
+          {/* Команда */}
           <Text style={styles.teamInfo}>команда «{teamName}»</Text>
 
+          {/* Место */}
           <Text style={isPrizePlace ? styles.placeTextBold : styles.placeText}>
-            {achievementPrefix} {achievement}
+            за {achievement}
           </Text>
 
+          {/* Описание олимпиады */}
           <Text style={styles.eventText}>
-            в I Межвузовской студенческой олимпиаде{'\n'}
-            по акушерству и гинекологии{'\n'}
-            им. профессора В.В. Горячева
+            в I Межвузовской студенческой олимпиаде по акушерству и гинекологии{'\n'}
+            им. профессора В.В. Горячева.
           </Text>
 
+          {/* Специальная награда */}
           {specialAward && (
             <View style={styles.specialAward}>
               <Text style={styles.specialAwardText}>{specialAward}</Text>
             </View>
           )}
-        </View>
 
-        {/* Футер с датой и номером */}
-        <View style={styles.footer}>
-          <Text style={styles.dateText}>{date}</Text>
-          <Text style={styles.certificateNumber}>№ {certificateNumber}</Text>
+          {/* Дата */}
+          <View style={styles.dateBox}>
+            <Text style={styles.dateText}>Самара, 04 ноября 2025 г.</Text>
+          </View>
         </View>
       </Page>
     </Document>
