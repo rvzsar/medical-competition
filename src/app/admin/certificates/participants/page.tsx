@@ -266,18 +266,21 @@ export default function ParticipantCertificatesPage() {
           {/* Info */}
           <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-sm text-blue-800 mb-2">
-              <strong>💡 Формат сертификата:</strong>
+              <strong>💡 Формат сертификата (A5 landscape):</strong>
             </p>
             <div className="text-sm text-blue-700 font-mono bg-white p-3 rounded border">
-              <p className="text-center">ВРУЧАЕТСЯ</p>
+              <p className="text-center">ОБ УЧАСТИИ</p>
               <p className="text-center">_______________</p>
               <p className="text-center font-bold">Имя Участника</p>
               <p className="text-center mt-2">
-                За участие в I Межвузовской олимпиаде
+                в I Межвузовской студенческой олимпиаде
                 <br />
                 по акушерству и гинекологии
                 <br />
-                им. В.В. Горячева
+                им. профессора В.В. Горячева.
+              </p>
+              <p className="text-center mt-2 text-gray-500">
+                Самара, 04 ноября 2025 г.
               </p>
             </div>
           </div>

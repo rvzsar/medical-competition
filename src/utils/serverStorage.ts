@@ -200,11 +200,26 @@ export const serverStorageUtils = {
   },
 
   // Получение общего балла команды
+  // Основные баллы ограничены 60, "Вопрос от жюри" добавляется сверх лимита
   async getTeamTotalScore(teamId: string): Promise<number> {
     try {
       const aggregatedScores = await this.getAggregatedScores();
       const teamScores = aggregatedScores.filter(s => s.teamId === teamId);
-      return teamScores.reduce((total, score) => total + score.averageScore, 0);
+      
+      // Отделяем "Вопрос от жюри" от основных конкурсов
+      const juryQuestionScore = teamScores.find(s => s.contestId === 'jury-question');
+      const mainScores = teamScores.filter(s => s.contestId !== 'jury-question');
+      
+      // Основные баллы ограничены 60
+      const mainTotal = Math.min(
+        mainScores.reduce((sum, score) => sum + score.averageScore, 0),
+        60
+      );
+      
+      // "Вопрос от жюри" добавляется сверх лимита
+      const juryBonus = juryQuestionScore ? juryQuestionScore.averageScore : 0;
+      
+      return Math.round((mainTotal + juryBonus) * 10) / 10;
     } catch (error) {
       console.error('Error getting team total score:', error);
       return 0;

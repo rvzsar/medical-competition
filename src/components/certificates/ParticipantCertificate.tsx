@@ -31,51 +31,80 @@ Font.register({
   ],
 });
 
+// A5 landscape: 210mm x 148mm (595 x 420 pt)
 const styles = StyleSheet.create({
   page: {
     flexDirection: 'column',
     backgroundColor: '#FFFFFF',
     padding: 0,
     fontFamily: 'Roboto',
+    width: 595,
+    height: 420,
   },
   content: {
-    marginTop: 120,
-    marginBottom: 80,
-    marginHorizontal: 80,
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 60,
+    paddingTop: 40,
+    paddingBottom: 30,
   },
-  // Заголовок "ВРУЧАЕТСЯ"
+  // Заголовок "ОБ УЧАСТИИ"
   title: {
-    fontSize: 18,
-    fontWeight: 700,
-    color: '#000000',
-    textAlign: 'center',
-    marginBottom: 25,
-    letterSpacing: 2,
-  },
-  // Линия под заголовком (для имени)
-  nameLine: {
-    width: 350,
-    borderBottom: '1px solid #000000',
-    marginBottom: 30,
-    paddingBottom: 8,
-  },
-  // Имя участника
-  participantName: {
-    fontSize: 22,
-    fontWeight: 700,
-    color: '#000000',
-    textAlign: 'center',
-  },
-  // Текст "За участие..."
-  eventText: {
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: 400,
     color: '#000000',
     textAlign: 'center',
-    lineHeight: 1.6,
+    marginBottom: 40,
+    letterSpacing: 3,
+  },
+  // Контейнер для имени с линией
+  nameContainer: {
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 25,
+  },
+  // Линия для имени
+  nameLine: {
+    width: 380,
+    borderBottom: '1px solid #000000',
+    paddingBottom: 5,
+    marginBottom: 8,
+  },
+  // Имя участника (над линией)
+  participantName: {
+    fontSize: 14,
+    fontWeight: 400,
+    color: '#000000',
+    textAlign: 'center',
+  },
+  // Текст описания олимпиады
+  eventText: {
+    fontSize: 12,
+    fontWeight: 400,
+    color: '#000000',
+    textAlign: 'center',
+    lineHeight: 1.5,
+    marginBottom: 50,
+  },
+  // Дата внизу
+  dateContainer: {
+    position: 'absolute',
+    bottom: 35,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  dateBox: {
+    backgroundColor: '#D0D0D0',
+    paddingHorizontal: 15,
+    paddingVertical: 5,
+  },
+  dateText: {
+    fontSize: 11,
+    fontWeight: 400,
+    color: '#000000',
+    textAlign: 'center',
   },
 });
 
@@ -86,21 +115,40 @@ export interface ParticipantCertificateProps {
 const ParticipantCertificate: React.FC<ParticipantCertificateProps> = ({
   participantName,
 }) => {
+  // Форматирование даты
+  const eventDate = new Date(2025, 10, 4); // 4 ноября 2025
+  const formattedDate = eventDate.toLocaleDateString('ru-RU', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
+
   return (
     <Document>
-      <Page size="A4" orientation="landscape" style={styles.page}>
+      <Page size="A5" orientation="landscape" style={styles.page}>
         <View style={styles.content}>
-          <Text style={styles.title}>ВРУЧАЕТСЯ</Text>
+          {/* Заголовок */}
+          <Text style={styles.title}>ОБ УЧАСТИИ</Text>
 
-          <View style={styles.nameLine}>
-            <Text style={styles.participantName}>{participantName}</Text>
+          {/* Имя участника с линией */}
+          <View style={styles.nameContainer}>
+            <View style={styles.nameLine}>
+              <Text style={styles.participantName}>{participantName}</Text>
+            </View>
           </View>
 
+          {/* Описание олимпиады */}
           <Text style={styles.eventText}>
-            За участие в I Межвузовской олимпиаде{'\n'}
-            по акушерству и гинекологии{'\n'}
-            им. В.В. Горячева
+            в I Межвузовской студенческой олимпиаде по акушерству и гинекологии{'\n'}
+            им. профессора В.В. Горячева.
           </Text>
+        </View>
+
+        {/* Дата внизу */}
+        <View style={styles.dateContainer}>
+          <View style={styles.dateBox}>
+            <Text style={styles.dateText}>Самара, {formattedDate}</Text>
+          </View>
         </View>
       </Page>
     </Document>

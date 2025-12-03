@@ -7,7 +7,7 @@ import CertificateEmail from '@/emails/CertificateEmail';
 import { AggregatedScore } from '@/types';
 import type { TeamCertificateProps } from '@/components/certificates/TeamCertificate';
 import type { IndividualCertificateProps } from '@/components/certificates/IndividualCertificate';
-import { getAggregatedScores, getTeams, getCertificateTemplates } from '@/utils/redisStorage';
+import { getAggregatedScores, getTeams, getCertificateTemplates, calculateTotalScore as calculateTotalScoreFromStorage } from '@/utils/redisStorage';
 
 interface SendCertificateRequest {
   type: 'team' | 'individual';
@@ -50,10 +50,9 @@ function getAchievementText(place: number): string {
   }
 }
 
-// Функция для расчета общего балла команды
+// Функция для расчета общего балла команды (обертка для импортированной функции)
 function calculateTotalScore(teamId: string, allScores: AggregatedScore[]): number {
-  const teamScores = allScores.filter(s => s.teamId === teamId);
-  return teamScores.reduce((sum, score) => sum + score.averageScore, 0);
+  return calculateTotalScoreFromStorage(allScores, teamId);
 }
 
 // Генерация PDF сертификата
