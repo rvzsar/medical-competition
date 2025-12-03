@@ -191,11 +191,12 @@ export default function ContestsPage() {
             <div>
               <h3 className="font-semibold mb-2">Максимальные баллы:</h3>
               <ul className="space-y-1 text-sm">
-                <li>• Визитка: 6 баллов</li>
-                <li>• Клинический случай: 4 балла</li>
-                <li>• Практические навыки: 48 баллов (4 станции × 12)</li>
-                <li>• Битва умов: 2 балла</li>
-                <li className="font-bold pt-2 border-t">Итого: 60 баллов</li>
+                <li>• I. Визитка: 6 баллов</li>
+                <li>• II. Клинический случай: 4 балла</li>
+                <li>• III. Практические навыки: 48 баллов (4 станции × 12)</li>
+                <li>• V. Битва умов: 2 балла</li>
+                <li>• VI. Вопрос от жюри: 2 балла (при необходимости)</li>
+                <li className="font-bold pt-2 border-t">Итого (без VI): 60 баллов</li>
               </ul>
             </div>
           </div>
