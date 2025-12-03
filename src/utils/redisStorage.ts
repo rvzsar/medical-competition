@@ -324,6 +324,7 @@ export async function deleteTeam(teamId: string) {
 export async function clearAllScores() {
   const client = await getRedisClient();
   await client.set(KEYS.TEAM_SCORES, JSON.stringify([]));
+  await client.del(KEYS.SCORES_LOG); // Очищаем протокол оценок
   await updateAggregatedScores();
   
   return await getAllData();
