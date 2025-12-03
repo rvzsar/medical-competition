@@ -18,8 +18,12 @@ const contestNames: Record<string, string> = {
   "visit-card": "I. Визитка",
   "clinical-case": "II. Клинический случай",
   "practical-skills": "III. Практические навыки",
+  "sutures": "III. Швы при кесаревом сечении",
+  "outpatient": "III. Амбулаторный прием",
+  "obstetric": "III. Акушерское пособие",
+  "laparoscopy": "III. Лапароскопия",
   "mind-battle": "IV. Битва умов",
-  "jury-question": "VI. Вопрос от жюри",
+  "jury-question": "V. Вопрос от жюри",
 };
 
 export default function ProtocolPage() {

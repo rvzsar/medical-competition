@@ -2,6 +2,7 @@ import { createClient, RedisClientType } from 'redis';
 import { Team, TeamScore, AggregatedScore, JuryMember } from '@/types';
 import { CertificateTemplatesConfig } from '@/types/certificate';
 import { JURY_MEMBERS } from '@/config/juryMembers';
+import { CONTESTS, PRACTICAL_STATIONS, MAX_TOTAL_SCORE } from '@/config/contests';
 
 // Ключи для хранения данных в Redis
 const KEYS = {
@@ -85,6 +86,19 @@ async function initializeDefaultData() {
   };
 }
 
+// Получение всех ID конкурсов (основные + станции практических навыков)
+function getAllContestIds(): string[] {
+  // Основные конкурсы (кроме practical-skills, т.к. он разбит на станции)
+  const mainContests = CONTESTS
+    .filter(c => c.id !== 'practical-skills')
+    .map(c => c.id);
+  
+  // Станции практических навыков
+  const stationIds = PRACTICAL_STATIONS.map(s => s.id);
+  
+  return [...mainContests, ...stationIds];
+}
+
 // Функция для обновления агрегированных оценок
 async function updateAggregatedScores() {
   const client = await getRedisClient();
@@ -92,9 +106,10 @@ async function updateAggregatedScores() {
   const teamScores = JSON.parse(await client.get(KEYS.TEAM_SCORES) || '[]');
   
   const aggregatedScores: AggregatedScore[] = [];
+  const allContestIds = getAllContestIds();
 
   teams.forEach((team: Team) => {
-    ['visit-card', 'clinical-case', 'practical-skills', 'mind-battle', 'jury-question'].forEach(contestId => {
+    allContestIds.forEach(contestId => {
       const contestScores = teamScores.filter(
         (s: TeamScore) => s.teamId === team.id && s.contestId === contestId
       );
@@ -126,6 +141,81 @@ async function updateAggregatedScores() {
 
   await client.set(KEYS.AGGREGATED_SCORES, JSON.stringify(aggregatedScores));
   return aggregatedScores;
+}
+
+/**
+ * Расчет итогового балла команды
+ * Учитывает все 6 конкурсов: Визитка (6) + Клинический случай (4) + 
+ * 4 станции практических навыков (48) + Битва умов (2) = 60 баллов
+ * Requirements: 9.1, 9.2
+ */
+export function calculateTotalScore(aggregatedScores: AggregatedScore[], teamId: string): number {
+  const teamScores = aggregatedScores.filter(s => s.teamId === teamId);
+  
+  // Суммируем баллы по всем конкурсам и станциям
+  const total = teamScores.reduce((sum, score) => sum + score.averageScore, 0);
+  
+  // Ограничиваем максимумом 60 баллов
+  return Math.min(Math.round(total * 10) / 10, MAX_TOTAL_SCORE);
+}
+
+/**
+ * Получение детализации баллов команды по всем конкурсам
+ * Requirements: 9.1, 9.2
+ */
+export interface TeamScoreBreakdown {
+  teamId: string;
+  visitCard: number;
+  clinicalCase: number;
+  practicalSkills: {
+    sutures: number;
+    outpatient: number;
+    obstetric: number;
+    laparoscopy: number;
+    total: number;
+  };
+  mindBattle: number;
+  juryQuestion: number;
+  total: number;
+}
+
+export function getTeamScoreBreakdown(aggregatedScores: AggregatedScore[], teamId: string): TeamScoreBreakdown {
+  const getScore = (contestId: string): number => {
+    const score = aggregatedScores.find(s => s.teamId === teamId && s.contestId === contestId);
+    return score ? score.averageScore : 0;
+  };
+
+  const sutures = getScore('sutures');
+  const outpatient = getScore('outpatient');
+  const obstetric = getScore('obstetric');
+  const laparoscopy = getScore('laparoscopy');
+  const practicalTotal = sutures + outpatient + obstetric + laparoscopy;
+
+  const visitCard = getScore('visit-card');
+  const clinicalCase = getScore('clinical-case');
+  const mindBattle = getScore('mind-battle');
+  const juryQuestion = getScore('jury-question');
+
+  const total = Math.min(
+    visitCard + clinicalCase + practicalTotal + mindBattle + juryQuestion,
+    MAX_TOTAL_SCORE
+  );
+
+  return {
+    teamId,
+    visitCard,
+    clinicalCase,
+    practicalSkills: {
+      sutures,
+      outpatient,
+      obstetric,
+      laparoscopy,
+      total: practicalTotal,
+    },
+    mindBattle,
+    juryQuestion,
+    total: Math.round(total * 10) / 10,
+  };
 }
 
 // Получение всех данных

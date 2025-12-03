@@ -4,7 +4,7 @@ import ReactPDF, { DocumentProps } from '@react-pdf/renderer';
 import { AggregatedScore } from '@/types';
 import type { TeamCertificateProps } from '@/components/certificates/TeamCertificate';
 import type { IndividualCertificateProps } from '@/components/certificates/IndividualCertificate';
-import { getAggregatedScores, getTeams, getCertificateTemplates } from '@/utils/redisStorage';
+import { getAggregatedScores, getTeams, getCertificateTemplates, calculateTotalScore } from '@/utils/redisStorage';
 
 interface GenerateCertificateRequest {
   type: 'team' | 'individual';
@@ -36,10 +36,9 @@ function getAchievementText(place: number): string {
   }
 }
 
-// Функция для расчета общего балла команды
-function calculateTotalScore(teamId: string, allScores: AggregatedScore[]): number {
-  const teamScores = allScores.filter(s => s.teamId === teamId);
-  return teamScores.reduce((sum, score) => sum + score.averageScore, 0);
+// Функция для расчета общего балла команды (обертка для импортированной функции)
+function getTeamTotalScore(teamId: string, allScores: AggregatedScore[]): number {
+  return calculateTotalScore(allScores, teamId);
 }
 
 export async function POST(request: NextRequest) {
@@ -66,7 +65,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Рассчитываем общий балл команды
-      const totalScore = calculateTotalScore(teamId, scores);
+      const totalScore = getTeamTotalScore(teamId, scores);
       
       if (totalScore === 0) {
         return NextResponse.json(
@@ -78,7 +77,7 @@ export async function POST(request: NextRequest) {
       // Определяем место команды
       const teamTotals = teams.map(t => ({
         teamId: t.id,
-        totalScore: calculateTotalScore(t.id, scores as AggregatedScore[])
+        totalScore: getTeamTotalScore(t.id, scores as AggregatedScore[])
       }));
       const sortedScores = teamTotals.sort((a, b) => b.totalScore - a.totalScore);
       const place = sortedScores.findIndex(s => s.teamId === teamId) + 1;
@@ -147,7 +146,7 @@ export async function POST(request: NextRequest) {
       // Определяем место команды
       const teamTotals = teams.map(t => ({
         teamId: t.id,
-        totalScore: calculateTotalScore(t.id, scores)
+        totalScore: getTeamTotalScore(t.id, scores)
       }));
       const sortedScores = teamTotals.sort((a, b) => b.totalScore - a.totalScore);
       const place = sortedScores.findIndex(s => s.teamId === teamId) + 1;

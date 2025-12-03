@@ -14,7 +14,7 @@ export default function ClinicalCaseContestPage() {
   const [teamScores, setTeamScores] = useState<TeamScore[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<string>("");
   const [currentScore, setCurrentScore] = useState<ClinicalCaseScore>({
-    correctAnswer: false,
+    correctAnswer: true,
     explanation: 0,
     earlyCompletion: false,
   });
@@ -63,16 +63,19 @@ export default function ClinicalCaseContestPage() {
     loadData();
   }, [router]);
 
+  /**
+   * Расчет итогового балла для клинического случая
+   * Requirements 2.1, 2.2, 2.3:
+   * - Шкала: 3 (полный ответ), 2 (с неточностями), 1 (частичный), 0 (неверный)
+   * - Бонус +1 за досрочный ответ
+   * - Максимум 4 балла
+   */
   const calculateTotal = (score: ClinicalCaseScore) => {
-    let total = score.explanation;
-    if (score.correctAnswer && score.earlyCompletion) {
+    let total = score.explanation; // 0-3 балла
+    if (score.earlyCompletion) {
       total += 1; // бонус за досрочное выполнение
     }
-    // Если ответ неправильный, максимальный балл - 1 (только за объяснение)
-    if (!score.correctAnswer && total > 1) {
-      total = 1;
-    }
-    return total;
+    return Math.min(total, 4); // максимум 4 балла
   };
 
   const saveScore = async () => {
@@ -107,7 +110,7 @@ export default function ClinicalCaseContestPage() {
       // Сбрасываем форму
       setSelectedTeam("");
       setCurrentScore({
-        correctAnswer: false,
+        correctAnswer: true,
         explanation: 0,
         earlyCompletion: false,
       });
@@ -129,7 +132,7 @@ export default function ClinicalCaseContestPage() {
       setIsEditing(true);
     } else {
       setCurrentScore({
-        correctAnswer: false,
+        correctAnswer: true,
         explanation: 0,
         earlyCompletion: false,
       });
@@ -183,7 +186,7 @@ export default function ClinicalCaseContestPage() {
       setScores({});
       setSelectedTeam("");
       setCurrentScore({
-        correctAnswer: false,
+        correctAnswer: true,
         explanation: 0,
         earlyCompletion: false,
       });
@@ -285,41 +288,7 @@ export default function ClinicalCaseContestPage() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Правильность ответа на вопросы задачи
-                      </label>
-                      <div className="space-y-2">
-                        <label className="flex items-center">
-                          <input
-                            type="radio"
-                            name="correctAnswer"
-                            checked={currentScore.correctAnswer}
-                            onChange={() => {
-                              setCurrentScore({...currentScore, correctAnswer: true});
-                              setHasUnsavedChanges(true);
-                            }}
-                            className="mr-2"
-                          />
-                          <span className="text-sm">Ответ дан правильно</span>
-                        </label>
-                        <label className="flex items-center">
-                          <input
-                            type="radio"
-                            name="correctAnswer"
-                            checked={!currentScore.correctAnswer}
-                            onChange={() => {
-                              setCurrentScore({...currentScore, correctAnswer: false});
-                              setHasUnsavedChanges(true);
-                            }}
-                            className="mr-2"
-                          />
-                          <span className="text-sm">Ответ дан неправильно</span>
-                        </label>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Качество объяснения хода решения
+                        Качество ответа (Requirements 2.1)
                       </label>
                       <select
                         value={currentScore.explanation}
@@ -329,12 +298,12 @@ export default function ClinicalCaseContestPage() {
                         }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="0">0 баллов - диагноз неправильный</option>
-                        <option value="1">1 балл - диагноз верный, но объяснение неполное</option>
-                        <option value="2">2 балла - ответ правильный, но недостаточно логичный</option>
-                        <option value="3">3 балла - ответ правильный, объяснение подробное</option>
+                        <option value="3">3 балла - Полный правильный ответ</option>
+                        <option value="2">2 балла - С неточностями</option>
+                        <option value="1">1 балл - Частичный ответ</option>
+                        <option value="0">0 баллов - Неверный ответ</option>
                       </select>
-                      {currentScore.explanation > 0 && (
+                      {currentScore.explanation >= 0 && (
                         <p className="text-xs text-gray-600 mt-1">
                           {getExplanationText(currentScore.explanation)}
                         </p>
@@ -442,8 +411,7 @@ export default function ClinicalCaseContestPage() {
                     
                     {score ? (
                       <div className="text-sm text-gray-600 space-y-1">
-                        <div>Ответ: {score.correctAnswer ? 'Правильный ✅' : 'Неправильный ❌'}</div>
-                        <div>Объяснение: {score.explanation}/3</div>
+                        <div>Качество ответа: {score.explanation}/3</div>
                         {score.earlyCompletion && (
                           <div className="text-green-600">Досрочное выполнение: +1 балл</div>
                         )}
