@@ -6,21 +6,28 @@ import { Document, Packer, Paragraph, TextRun, AlignmentType, PageOrientation } 
 import { getTeams } from '@/utils/redisStorage';
 
 // Генерация DOCX сертификата участника
+// A5 landscape: 210mm x 148mm
+// 1 мм = 56.7 twips (1440 twips = 1 inch, 1 inch = 25.4mm)
 async function generateParticipantDocx(participantName: string): Promise<Buffer> {
   const doc = new Document({
     sections: [{
       properties: {
         page: {
           size: {
-            width: 8419, // A5 width in twips (148mm)
-            height: 5953, // A5 height in twips (210mm) - landscape
+            // A5 landscape: ширина 210мм, высота 148мм
+            width: 11906,  // 210mm в twips (210 * 56.7)
+            height: 8391,  // 148mm в twips (148 * 56.7)
             orientation: PageOrientation.LANDSCAPE,
           },
           margin: {
-            top: 1800,    // ~63mm от верха (под "СЕРТИФИКАТ")
-            bottom: 1600, // ~56mm от низа (над подписью)
-            left: 1000,
-            right: 1000,
+            // Отступы для размещения текста в центре бланка
+            // Сверху ~67мм (под заголовком "СЕРТИФИКАТ")
+            top: 3800,
+            // Снизу ~60мм (над подписью ректора и печатью)
+            bottom: 3400,
+            // По бокам ~25мм
+            left: 1420,
+            right: 1420,
           },
         },
       },
@@ -28,7 +35,7 @@ async function generateParticipantDocx(participantName: string): Promise<Buffer>
         // Заголовок "ОБ УЧАСТИИ"
         new Paragraph({
           alignment: AlignmentType.CENTER,
-          spacing: { after: 400 },
+          spacing: { after: 300 },
           children: [
             new TextRun({
               text: 'ОБ УЧАСТИИ',
@@ -53,7 +60,7 @@ async function generateParticipantDocx(participantName: string): Promise<Buffer>
         // Описание олимпиады
         new Paragraph({
           alignment: AlignmentType.CENTER,
-          spacing: { after: 100 },
+          spacing: { after: 80 },
           children: [
             new TextRun({
               text: 'в I Межвузовской студенческой олимпиаде по акушерству и гинекологии',
@@ -64,7 +71,7 @@ async function generateParticipantDocx(participantName: string): Promise<Buffer>
         }),
         new Paragraph({
           alignment: AlignmentType.CENTER,
-          spacing: { after: 400 },
+          spacing: { after: 300 },
           children: [
             new TextRun({
               text: 'им. профессора В.В. Горячева.',
@@ -81,7 +88,7 @@ async function generateParticipantDocx(participantName: string): Promise<Buffer>
               text: 'Самара, 04 ноября 2025 г.',
               size: 20, // 10pt
               font: 'Times New Roman',
-              highlight: 'lightGray',
+              shading: { fill: 'CCCCCC' },
             }),
           ],
         }),
