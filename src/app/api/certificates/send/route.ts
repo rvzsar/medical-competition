@@ -10,6 +10,8 @@ import type { IndividualCertificateProps } from '@/components/certificates/Indiv
 import { getTeamsByEventId } from '@/services/teamService';
 import { getScoresByEventId } from '@/services/scoreService';
 import { getCertificateTemplates } from '@/services/certificateService';
+import { getDesignTemplate } from '@/services/certificateDesignService';
+import { generatePdfFromDesign, generateCertificateNumber as generateDesignCertNumber, type CertificateData } from '@/services/certificatePdfFromDesign';
 import { checkApiAuth, authErrorResponse } from '@/lib/api-auth';
 
 // Email validation regex
@@ -26,6 +28,7 @@ interface SendCertificateRequest {
   participantName?: string;
   participantEmail: string;
   specialAward?: string;
+  useCustomDesign?: boolean; // Использовать кастомный дизайн
 }
 
 interface SendBulkRequest {
@@ -207,7 +210,7 @@ async function sendCertificateEmail(options: {
 
 // Отправка одного сертификата
 async function sendSingleCertificate(request: SendCertificateRequest) {
-  const { type, eventId, teamId, participantName, participantEmail, specialAward } = request;
+  const { type, eventId, teamId, participantName, participantEmail, specialAward, useCustomDesign } = request;
 
   if (!eventId) {
     throw new Error('eventId обязателен');
@@ -236,37 +239,62 @@ async function sendSingleCertificate(request: SendCertificateRequest) {
   const totalScore = teamTotals.find(t => t.teamId === teamId)?.totalScore || 0;
 
   const templates = await getCertificateTemplates(eventId);
+  
+  // Проверяем наличие кастомного дизайна
+  const customDesign = useCustomDesign ? await getDesignTemplate(eventId) : null;
 
-  // Данные сертификата
-  const certificateData = {
-    ...(type === 'team'
-      ? {
-          teamName: team.name,
-          place: place <= 3 ? place : 0,
-          score: totalScore,
-        }
-      : {
-          participantName: participantName || '',
-          teamName: team.name,
-          achievement: getAchievementText(place),
-          specialAward,
-        }),
-    date: new Date().toLocaleDateString('ru-RU', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    }),
-    eventName: templates.organizer.eventName,
-    organizerName: templates.organizer.name,
-    organizerTitle: templates.organizer.title,
-    certificateNumber: generateCertificateNumber(),
-  };
+  let pdfBuffer: Buffer;
+  
+  if (customDesign) {
+    // Генерируем PDF из кастомного дизайна
+    const designData: CertificateData = {
+      recipientName: type === 'individual' && participantName ? participantName : team.name,
+      teamName: team.name,
+      eventName: templates.organizer.eventName,
+      date: new Date().toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      }),
+      place: place <= 3 ? place : undefined,
+      score: totalScore ? totalScore.toFixed(2) : undefined,
+      certificateNumber: generateDesignCertNumber(),
+      organizerName: templates.organizer.name,
+      organizerTitle: templates.organizer.title,
+    };
+    
+    pdfBuffer = await generatePdfFromDesign(customDesign, designData);
+  } else {
+    // Используем стандартные шаблоны
+    const certificateData = {
+      ...(type === 'team'
+        ? {
+            teamName: team.name,
+            place: place <= 3 ? place : 0,
+            score: totalScore,
+          }
+        : {
+            participantName: participantName || '',
+            teamName: team.name,
+            achievement: getAchievementText(place),
+            specialAward,
+          }),
+      date: new Date().toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      }),
+      eventName: templates.organizer.eventName,
+      organizerName: templates.organizer.name,
+      organizerTitle: templates.organizer.title,
+      certificateNumber: generateCertificateNumber(),
+    };
 
-  // Генерируем PDF
-  const pdfBuffer =
-    type === 'team'
-      ? await generateCertificatePDF('team', certificateData as TeamCertificateProps, eventId)
-      : await generateCertificatePDF('individual', certificateData as IndividualCertificateProps, eventId);
+    pdfBuffer =
+      type === 'team'
+        ? await generateCertificatePDF('team', certificateData as TeamCertificateProps, eventId)
+        : await generateCertificatePDF('individual', certificateData as IndividualCertificateProps, eventId);
+  }
 
   const eventName = templates.organizer.eventName;
   const organizerName = templates.organizer.name;

@@ -221,6 +221,7 @@ export default function CertificatesManager({
             : undefined,
           participantEmail,
           specialAward: specialAward || undefined,
+          useCustomDesign: templateSource === 'custom' && hasCustomDesign,
         }),
       });
 
