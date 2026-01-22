@@ -12,12 +12,15 @@ import { z } from 'zod';
 
 export const EventStatusSchema = z.enum(['draft', 'active', 'completed', 'archived']);
 
-export const CreateEventSchema = z.object({
+// Base schema without refinements for partial usage
+const CreateEventBaseSchema = z.object({
   name: z.string().min(1, 'Название обязательно').max(200),
   description: z.string().max(1000).optional(),
   startDate: z.coerce.date().optional(),
   endDate: z.coerce.date().optional(),
-}).refine(
+});
+
+export const CreateEventSchema = CreateEventBaseSchema.refine(
   (data) => {
     if (data.startDate && data.endDate) {
       return data.endDate >= data.startDate;
@@ -30,7 +33,7 @@ export const CreateEventSchema = z.object({
   }
 );
 
-export const UpdateEventSchema = CreateEventSchema.partial().extend({
+export const UpdateEventSchema = CreateEventBaseSchema.partial().extend({
   status: EventStatusSchema.optional(),
 });
 
@@ -40,7 +43,8 @@ export const UpdateEventSchema = CreateEventSchema.partial().extend({
 
 export const CriteriaTypeSchema = z.enum(['numeric', 'boolean', 'dropdown']);
 
-export const CriteriaSchema = z.object({
+// Base schema without refinements
+const CriteriaBaseSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1).max(100),
   type: CriteriaTypeSchema,
@@ -49,7 +53,9 @@ export const CriteriaSchema = z.object({
   options: z.array(z.string()).optional(),
   weight: z.number().positive().default(1),
   description: z.string().max(500).optional(),
-}).refine(
+});
+
+export const CriteriaSchema = CriteriaBaseSchema.refine(
   (data) => {
     // Для numeric обязательны minValue и maxValue
     if (data.type === 'numeric') {
@@ -208,7 +214,8 @@ export const validateCriteriaValue = (
   }
 };
 
-export const SubmitScoreSchema = z.object({
+// Base schema without refinements
+const SubmitScoreBaseSchema = z.object({
   eventId: z.string().uuid(),
   contestId: z.string().uuid(),
   teamId: z.string().uuid().optional(),
@@ -218,7 +225,9 @@ export const SubmitScoreSchema = z.object({
   bonusPoints: z.number().nonnegative().optional(),
   penaltyPoints: z.number().nonnegative().optional(),
   notes: z.string().max(1000).optional(),
-}).refine(
+});
+
+export const SubmitScoreSchema = SubmitScoreBaseSchema.refine(
   (data) => {
     // Должен быть указан либо teamId, либо participantId
     return !!(data.teamId || data.participantId);
@@ -236,7 +245,7 @@ export const SubmitScoreSchema = z.object({
   }
 );
 
-export const UpdateScoreSchema = SubmitScoreSchema.partial().extend({
+export const UpdateScoreSchema = SubmitScoreBaseSchema.partial().extend({
   id: z.string().uuid(),
   reason: z.string().min(1).max(500).optional(), // причина изменения
 });
@@ -247,13 +256,16 @@ export const UpdateScoreSchema = SubmitScoreSchema.partial().extend({
 
 export const UserRoleSchema = z.enum(['Admin', 'Event_Manager', 'Jury']);
 
-export const CreateUserSchema = z.object({
+// Base schema without refinements
+const CreateUserBaseSchema = z.object({
   username: z.string().min(3).max(50),
   password: z.string().min(8).max(100),
   role: UserRoleSchema,
   eventId: z.string().uuid().optional(),
   juryId: z.string().uuid().optional(),
-}).refine(
+});
+
+export const CreateUserSchema = CreateUserBaseSchema.refine(
   (data) => {
     // Event_Manager и Jury должны иметь eventId
     if (data.role === 'Event_Manager' || data.role === 'Jury') {
