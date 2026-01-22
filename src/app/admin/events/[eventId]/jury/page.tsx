@@ -1,7 +1,7 @@
 import { requireAuth } from '@/lib/dal';
 import { getEventById } from '@/services/eventService';
 import { getContestsByEventId } from '@/services/contestService';
-import { getJuryAssignmentsByEventId, getAllJuryMembers } from '@/services/juryService';
+import { getJuryAssignmentsByEventId } from '@/services/juryService';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import JuryManagement from '@/components/admin/JuryManagement';
@@ -22,10 +22,9 @@ export default async function JuryManagementPage({ params }: JuryPageProps) {
     notFound();
   }
 
-  const [contests, assignments, allJuryMembers, csrfToken] = await Promise.all([
+  const [contests, assignments, csrfToken] = await Promise.all([
     getContestsByEventId(eventId),
     getJuryAssignmentsByEventId(eventId),
-    getAllJuryMembers(),
     generateCSRFToken(),
   ]);
 
@@ -76,7 +75,6 @@ export default async function JuryManagementPage({ params }: JuryPageProps) {
               eventId={eventId}
               contests={contests}
               assignments={assignments}
-              allJuryMembers={allJuryMembers}
               csrfToken={csrfToken}
             />
           </div>
