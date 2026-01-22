@@ -9,6 +9,7 @@ interface CertificatesManagerProps {
   teams: Team[];
   participants: Participant[];
   csrfToken?: string;
+  hasCustomDesign?: boolean;
 }
 
 interface ParticipantInfo {
@@ -44,6 +45,7 @@ export default function CertificatesManager({
   teams,
   participants,
   csrfToken,
+  hasCustomDesign: initialHasCustomDesign,
 }: CertificatesManagerProps) {
   const [activeTab, setActiveTab] = useState<'generate' | 'bulk' | 'settings'>('generate');
   const [selectedType, setSelectedType] = useState<'team' | 'individual'>('team');
@@ -57,6 +59,10 @@ export default function CertificatesManager({
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showConfirmSend, setShowConfirmSend] = useState(false);
   
+  // Template source: 'standard' or 'custom' (from designer)
+  const [templateSource, setTemplateSource] = useState<'standard' | 'custom'>('standard');
+  const [hasCustomDesign, setHasCustomDesign] = useState(initialHasCustomDesign || false);
+  
   // Bulk generation state
   const [bulkFormat, setBulkFormat] = useState<'pdf' | 'docx'>('pdf');
   const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([]);
@@ -67,6 +73,25 @@ export default function CertificatesManager({
   // Templates state
   const [templates, setTemplates] = useState<CertificateTemplatesConfig>(DEFAULT_TEMPLATES);
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(true);
+  
+  // Check if custom design exists
+  useEffect(() => {
+    async function checkCustomDesign() {
+      try {
+        const response = await fetch(`/api/certificates/designs?eventId=${eventId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setHasCustomDesign(!!data.template);
+          if (data.template) {
+            setTemplateSource('custom');
+          }
+        }
+      } catch (error) {
+        console.error('Failed to check custom design:', error);
+      }
+    }
+    checkCustomDesign();
+  }, [eventId]);
 
   // Load templates on mount
   useEffect(() => {
@@ -115,7 +140,12 @@ export default function CertificatesManager({
     setMessage(null);
 
     try {
-      const response = await fetch('/api/certificates/generate', {
+      // Выбираем endpoint в зависимости от источника шаблона
+      const endpoint = templateSource === 'custom' && hasCustomDesign
+        ? '/api/certificates/generate-from-design'
+        : '/api/certificates/generate';
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -313,14 +343,54 @@ export default function CertificatesManager({
 
   return (
     <div className="space-y-6">
-      {/* Designer Link */}
-      <div className="flex justify-end">
-        <a
-          href={`/admin/events/${eventId}/certificates/designer`}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-        >
-          🎨 Конструктор сертификатов
-        </a>
+      {/* Template Source Selection & Designer Link */}
+      <div className="bg-white rounded-lg shadow p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Источник шаблона
+            </label>
+            <div className="flex gap-4">
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="radio"
+                  name="templateSource"
+                  value="standard"
+                  checked={templateSource === 'standard'}
+                  onChange={() => setTemplateSource('standard')}
+                  className="mr-2 w-4 h-4 text-blue-600"
+                />
+                <span className="text-sm">Стандартный шаблон</span>
+              </label>
+              <label className={`flex items-center ${hasCustomDesign ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}>
+                <input
+                  type="radio"
+                  name="templateSource"
+                  value="custom"
+                  checked={templateSource === 'custom'}
+                  onChange={() => hasCustomDesign && setTemplateSource('custom')}
+                  disabled={!hasCustomDesign}
+                  className="mr-2 w-4 h-4 text-blue-600"
+                />
+                <span className="text-sm">
+                  Кастомный дизайн
+                  {hasCustomDesign ? ' ✓' : ' (не создан)'}
+                </span>
+              </label>
+            </div>
+          </div>
+          <a
+            href={`/admin/events/${eventId}/certificates/designer`}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors whitespace-nowrap"
+          >
+            🎨 {hasCustomDesign ? 'Редактировать дизайн' : 'Создать дизайн'}
+          </a>
+        </div>
+        {templateSource === 'custom' && hasCustomDesign && (
+          <p className="mt-2 text-sm text-green-600">
+            ✓ Будет использован ваш кастомный дизайн из конструктора
+          </p>
+        )}
       </div>
 
       {/* Tabs */}
