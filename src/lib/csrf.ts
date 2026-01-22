@@ -1,6 +1,8 @@
 /**
- * CSRF Protection
+ * CSRF Protection (Server-side only)
  * Защита от Cross-Site Request Forgery атак
+ * 
+ * Этот модуль используется только на сервере (Server Actions, API Routes)
  */
 
 import { cookies } from 'next/headers';
@@ -10,7 +12,7 @@ const CSRF_SECRET = process.env.CSRF_SECRET || 'change-me-in-production-use-rand
 const CSRF_COOKIE_NAME = 'csrf-token';
 
 /**
- * Генерация CSRF токена
+ * Генерация CSRF токена (только для Server Actions/API)
  */
 export async function generateCSRFToken(): Promise<string> {
   const token = randomBytes(32).toString('hex');

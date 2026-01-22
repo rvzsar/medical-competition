@@ -137,10 +137,78 @@ npm start
 
 ## Деплой на Vercel
 
-1. Подключите репозиторий к Vercel
-2. Добавьте Redis через Vercel Storage или внешний сервис
-3. Установите переменную окружения `REDIS_URL`
-4. Деплой произойдёт автоматически
+### Шаг 1: Подготовка Redis
+
+Система требует Redis для хранения данных. Рекомендуем использовать **Upstash Redis** (бесплатный tier доступен):
+
+1. Зарегистрируйтесь на [upstash.com](https://upstash.com/)
+2. Создайте новую Redis базу данных
+3. Скопируйте `UPSTASH_REDIS_REST_URL` (или стандартный `redis://` URL)
+
+### Шаг 2: Подключение к Vercel
+
+1. Перейдите на [vercel.com](https://vercel.com/) и войдите через GitHub
+2. Нажмите "Add New Project"
+3. Импортируйте репозиторий `rvzsar/medical-competition`
+4. Vercel автоматически определит Next.js проект
+
+### Шаг 3: Настройка переменных окружения
+
+В настройках проекта (Settings → Environment Variables) добавьте:
+
+| Переменная | Описание | Пример |
+|------------|----------|--------|
+| `REDIS_URL` | URL подключения к Redis | `redis://default:xxx@xxx.upstash.io:6379` |
+| `SESSION_SECRET` | Секрет для шифрования сессий (мин. 32 символа) | Сгенерируйте: `openssl rand -base64 32` |
+| `CSRF_SECRET` | Секрет для CSRF токенов (мин. 32 символа) | Сгенерируйте: `openssl rand -base64 32` |
+| `USER_CREDENTIALS` | Учётные данные пользователей | `admin:SecurePass123:Admin,manager:Pass456:Event_Manager` |
+| `JURY_ACCESS_PIN` | PIN для входа жюри | `OLYMPIAD2026` |
+
+**Опционально (для email уведомлений):**
+
+| Переменная | Описание |
+|------------|----------|
+| `EMAIL_USER` | Gmail адрес |
+| `EMAIL_PASS` | App Password от Gmail |
+| `EMAIL_FROM` | Имя отправителя |
+
+### Шаг 4: Деплой
+
+1. Нажмите "Deploy"
+2. Дождитесь завершения сборки (~2-3 минуты)
+3. Получите URL вашего приложения (например, `your-app.vercel.app`)
+
+### Шаг 5: Первый вход
+
+1. Перейдите на `https://your-app.vercel.app/login`
+2. Войдите с учётными данными из `USER_CREDENTIALS`
+3. Создайте первое мероприятие в админ-панели
+
+### Настройка домена (опционально)
+
+1. В Vercel: Settings → Domains
+2. Добавьте свой домен
+3. Настройте DNS записи согласно инструкции Vercel
+
+### Мониторинг
+
+- **Логи**: Vercel Dashboard → Deployments → Logs
+- **Аналитика**: Vercel Dashboard → Analytics
+- **Redis**: Upstash Console → Data Browser
+
+### Troubleshooting
+
+**Ошибка "Redis connection failed":**
+- Проверьте правильность `REDIS_URL`
+- Убедитесь что Redis доступен из Vercel (whitelist IP если нужно)
+
+**Ошибка "CSRF token invalid":**
+- Убедитесь что `CSRF_SECRET` установлен
+- Очистите cookies браузера
+
+**Ошибка "Session expired":**
+- Проверьте `SESSION_SECRET`
+- Убедитесь что секрет не менялся между деплоями
 
 ## Безопасность
 

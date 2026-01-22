@@ -8,8 +8,7 @@
 
 import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { login } from '@/actions/auth';
-import { generateCSRFToken } from '@/lib/csrf';
+import { login, getCSRFToken } from '@/actions/auth';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,7 +20,7 @@ export default function LoginPage() {
 
   // Генерировать CSRF токен при монтировании
   useEffect(() => {
-    generateCSRFToken().then(setCsrfToken);
+    getCSRFToken().then(setCsrfToken);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -1,9 +1,16 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { validateCSRFToken } from '@/lib/csrf';
+import { validateCSRFToken, generateCSRFToken } from '@/lib/csrf';
 import { createSession, destroySession } from '@/lib/session';
 import type { UserRole } from '@/lib/dal';
+
+/**
+ * Получить CSRF токен (Server Action для клиента)
+ */
+export async function getCSRFToken(): Promise<string> {
+  return generateCSRFToken();
+}
 
 /**
  * Конфигурация пользователей из переменных окружения
