@@ -33,9 +33,16 @@ export default function DesignerCanvas({
   const canvasWidth = (isLandscape ? paperSize.height : paperSize.width) * MM_TO_PX;
   const canvasHeight = (isLandscape ? paperSize.width : paperSize.height) * MM_TO_PX;
 
-  // Обработка drag
+  // Клик на элемент - выбор
+  const handleElementClick = useCallback((e: React.MouseEvent, elementId: string) => {
+    e.stopPropagation();
+    onSelectElement(elementId);
+  }, [onSelectElement]);
+
+  // Начало перетаскивания
   const handleMouseDown = useCallback((e: React.MouseEvent, elementId: string) => {
     e.stopPropagation();
+    // Выбираем элемент сразу при mousedown
     onSelectElement(elementId);
     
     const rect = containerRef.current?.getBoundingClientRect();
@@ -166,6 +173,14 @@ export default function DesignerCanvas({
     );
   };
 
+  // Клик на пустое место canvas - снять выбор
+  const handleCanvasClick = useCallback((e: React.MouseEvent) => {
+    // Снимаем выбор только если кликнули именно на canvas, а не на элемент
+    if (e.target === e.currentTarget) {
+      onSelectElement(null);
+    }
+  }, [onSelectElement]);
+
   return (
     <div
       ref={containerRef}
@@ -178,7 +193,7 @@ export default function DesignerCanvas({
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}
-      onClick={() => onSelectElement(null)}
+      onClick={handleCanvasClick}
     >
       {/* Elements */}
       {template.elements
@@ -189,7 +204,7 @@ export default function DesignerCanvas({
           return (
             <div
               key={element.id}
-              className={`absolute cursor-move ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
+              className={`absolute cursor-move ${isSelected ? 'ring-2 ring-blue-500' : 'hover:ring-1 hover:ring-blue-300'}`}
               style={{
                 left: `${element.x}%`,
                 top: `${element.y}%`,
@@ -197,6 +212,7 @@ export default function DesignerCanvas({
                 height: `${element.height}%`,
                 zIndex: element.zIndex,
               }}
+              onClick={(e) => handleElementClick(e, element.id)}
               onMouseDown={(e) => handleMouseDown(e, element.id)}
             >
               {renderElementContent(element)}

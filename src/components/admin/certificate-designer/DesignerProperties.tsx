@@ -35,6 +35,13 @@ export default function DesignerProperties({
         <div className="text-center text-gray-500 py-8">
           <div className="text-4xl mb-2">👆</div>
           <p className="text-sm">Выберите элемент для редактирования</p>
+          <p className="text-xs text-gray-400 mt-4">
+            Горячие клавиши:<br/>
+            Delete — удалить<br/>
+            Ctrl+D — дублировать<br/>
+            Ctrl+S — сохранить<br/>
+            Esc — снять выбор
+          </p>
         </div>
       </div>
     );
@@ -42,8 +49,13 @@ export default function DesignerProperties({
 
   const isTextOrPlaceholder = element.type === 'text' || element.type === 'placeholder';
 
+  // Prevent click from bubbling to canvas
+  const handlePanelClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   return (
-    <div className="w-72 bg-white border-l overflow-y-auto">
+    <div className="w-72 bg-white border-l overflow-y-auto" onClick={handlePanelClick}>
       <div className="p-4 space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">

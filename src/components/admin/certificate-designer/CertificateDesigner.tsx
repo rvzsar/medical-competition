@@ -146,6 +146,41 @@ export default function CertificateDesigner({
     }
   }, [saveMessage]);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Delete selected element
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedElementId) {
+        // Не удалять если фокус в input/textarea
+        const target = e.target as HTMLElement;
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+        
+        e.preventDefault();
+        deleteElement(selectedElementId);
+      }
+      
+      // Duplicate with Ctrl+D
+      if (e.key === 'd' && (e.ctrlKey || e.metaKey) && selectedElementId) {
+        e.preventDefault();
+        duplicateElement(selectedElementId);
+      }
+      
+      // Save with Ctrl+S
+      if (e.key === 's' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        handleSave();
+      }
+      
+      // Deselect with Escape
+      if (e.key === 'Escape') {
+        setSelectedElementId(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedElementId, deleteElement, duplicateElement, handleSave]);
+
   return (
     <div className="flex flex-col h-full bg-gray-100">
       {/* Header */}
