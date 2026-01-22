@@ -10,6 +10,7 @@ import { revalidateTag } from 'next/cache';
 import { checkPermission } from '@/lib/dal';
 import { validateCSRFToken } from '@/lib/csrf';
 import * as eventService from '@/services/eventService';
+import { logEntityCreated, logAction } from '@/services/auditLogService';
 import {
   CreateEventSchema,
   UpdateEventSchema,
@@ -39,6 +40,14 @@ export async function createEvent(
 
     // Создание мероприятия
     const event = await eventService.createEvent(validated, session.userId);
+
+    // Логируем создание
+    await logEntityCreated(
+      { id: session.userId, name: session.username || 'Unknown', role: session.role },
+      'event',
+      event.id,
+      event.name
+    );
 
     // Инвалидация кэша
     revalidateTag('events');
@@ -146,7 +155,10 @@ export async function deleteEvent(
     await validateCSRFToken(csrfToken);
 
     // Проверка авторизации (только Admin)
-    await checkPermission(['Admin']);
+    const session = await checkPermission(['Admin']);
+
+    // Получаем информацию о мероприятии для лога
+    const event = await eventService.getEventById(eventId);
 
     // Удаление мероприятия
     const deleted = await eventService.deleteEvent(eventId);
@@ -154,6 +166,13 @@ export async function deleteEvent(
     if (!deleted) {
       return { success: false, error: 'Мероприятие не найдено' };
     }
+
+    // Логируем удаление
+    await logAction(
+      'event_deleted',
+      { id: session.userId, name: session.username || 'Unknown', role: session.role },
+      { entityId: eventId, entityName: event?.name || 'Unknown', entityType: 'event' }
+    );
 
     // Инвалидация кэша
     revalidateTag('events');

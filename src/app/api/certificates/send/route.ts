@@ -13,6 +13,7 @@ import { getCertificateTemplates } from '@/services/certificateService';
 import { getDesignTemplate } from '@/services/certificateDesignService';
 import { generatePdfFromDesign, generateCertificateNumber as generateDesignCertNumber, type CertificateData } from '@/services/certificatePdfFromDesign';
 import { checkApiAuth, authErrorResponse } from '@/lib/api-auth';
+import { logEmailSent, logBulkEmailSent, logAction } from '@/services/auditLogService';
 
 // Email validation regex
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -410,6 +411,18 @@ export async function POST(request: NextRequest) {
 
     const smtpInfo = await sendSingleCertificate(body);
 
+    // Логируем успешную отправку
+    await logEmailSent(
+      {
+        id: authResult.session.userId || 'unknown',
+        name: authResult.session.username || 'Unknown',
+        role: authResult.session.role,
+      },
+      body.participantEmail,
+      'Сертификат участника',
+      body.eventId
+    );
+
     return NextResponse.json({
       success: true,
       message: 'Сертификат успешно отправлен',
@@ -418,6 +431,21 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Ошибка при отправке сертификата:', error);
+    
+    // Логируем ошибку
+    await logAction(
+      'email_failed',
+      {
+        id: authResult.session.userId || 'unknown',
+        name: authResult.session.username || 'Unknown',
+        role: authResult.session.role,
+      },
+      {
+        recipientEmail: body.participantEmail,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      }
+    );
+    
     return NextResponse.json(
       { 
         error: 'Ошибка при отправке сертификата', 
@@ -512,6 +540,19 @@ export async function PUT(request: NextRequest) {
           error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
+    }
+
+    // Логируем массовую рассылку
+    if (results.length > 0) {
+      await logBulkEmailSent(
+        {
+          id: authResult.session.userId || 'unknown',
+          name: authResult.session.username || 'Unknown',
+          role: authResult.session.role,
+        },
+        results.length,
+        body.eventId
+      );
     }
 
     return NextResponse.json({

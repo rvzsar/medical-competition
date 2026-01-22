@@ -10,6 +10,8 @@ import { revalidateTag } from 'next/cache';
 import { checkPermission } from '@/lib/dal';
 import { validateCSRFToken } from '@/lib/csrf';
 import * as contestService from '@/services/contestService';
+import { logEntityCreated, logAction } from '@/services/auditLogService';
+import { getEventById } from '@/services/eventService';
 import {
   CreateContestSchema,
   UpdateContestSchema,
@@ -32,13 +34,26 @@ export async function createContest(
     await validateCSRFToken(csrfToken);
 
     // Проверка авторизации с проверкой доступа к мероприятию
-    await checkPermission(['Admin', 'Event_Manager'], input.eventId);
+    const session = await checkPermission(['Admin', 'Event_Manager'], input.eventId);
 
     // Валидация входных данных
     const validated = CreateContestSchema.parse(input);
 
     // Создание конкурса
     const contest = await contestService.createContest(validated);
+
+    // Получаем название мероприятия для лога
+    const event = await getEventById(input.eventId);
+
+    // Логируем создание
+    await logEntityCreated(
+      { id: session.userId, name: session.username || 'Unknown', role: session.role },
+      'contest',
+      contest.id,
+      contest.name,
+      input.eventId,
+      event?.name
+    );
 
     // Инвалидация кэша
     revalidateTag(`event:${input.eventId}:contests`);

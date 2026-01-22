@@ -43,10 +43,16 @@ export default async function AdminDashboard({ searchParams }: AdminDashboardPro
           </h1>
           <div className="flex gap-3">
             <Link
+              href="/admin/logs"
+              className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+            >
+              📋 Журнал действий
+            </Link>
+            <Link
               href="/admin/protocol"
               className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
             >
-              📋 Протокол оценок
+              📊 Протокол оценок
             </Link>
             <Link
               href="/admin/events/new"
