@@ -19,10 +19,15 @@
 
 # production
 /build
+/dist
 
 # misc
 .DS_Store
 *.pem
+Thumbs.db
+*.swp
+*.swo
+*~
 
 # debug
 npm-debug.log*
@@ -30,8 +35,14 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+# Keep .env.example for documentation
+!.env.example
 
 # vercel
 .vercel
@@ -39,3 +50,70 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# IDE
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# Logs
+logs
+*.log
+
+# Cache
+.cache
+.eslintcache
+.stylelintcache
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Local development
+*.local
+
+# Sentry
+.sentryclirc
+
+# Documentation (internal dev docs, not for production)
+ARCHITECTURE.md
+BACKEND_ANALYSIS_SUMMARY.md
+BACKEND_CRITICAL_ANALYSIS.md
+BACKEND_FIX_PLAN.md
+BACKEND_PHASE1_COMPLETE.md
+CERTIFICATE_SYSTEM_DOCS.md
+CHANGELOG.md
+CODE_VERIFICATION_COMPLETE.md
+COMPREHENSIVE_AUDIT_REPORT.md
+DENTAL_OLYMPIAD_IMPLEMENTATION.md
+DUPLICATION_ANALYSIS.md
+FRONTEND_COMPLETION_SUMMARY.md
+FRONTEND_CRITICAL_ANALYSIS.md
+FRONTEND_FIXES_COMPLETE.md
+FRONTEND_FIX_PLAN.md
+FIXES_APPLIED.md
+PRELAUNCH_CHECKLIST.md
+SECURITY_FIXES.md
+UI_UX_AUDIT_REPORT.md
+USER_FLOW_ANALYSIS.md
+USER_FLOW_CRITICAL_ISSUES_FIXED.md
+USER_FLOW_FIXES_COMPLETE.md
+
+# Keep README
+!README.md
+
+# Kiro IDE config
+.kiro/

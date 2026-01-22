@@ -7,10 +7,21 @@ import CertificateEmail from '@/emails/CertificateEmail';
 import { AggregatedScore } from '@/types';
 import type { TeamCertificateProps } from '@/components/certificates/TeamCertificate';
 import type { IndividualCertificateProps } from '@/components/certificates/IndividualCertificate';
-import { getAggregatedScores, getTeams, getCertificateTemplates, calculateTotalScore as calculateTotalScoreFromStorage } from '@/utils/redisStorage';
+import { getTeamsByEventId } from '@/services/teamService';
+import { getScoresByEventId } from '@/services/scoreService';
+import { getCertificateTemplates } from '@/services/certificateService';
+import { checkApiAuth, authErrorResponse } from '@/lib/api-auth';
+
+// Email validation regex
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+function isValidEmail(email: string): boolean {
+  return EMAIL_REGEX.test(email) && email.length <= 254;
+}
 
 interface SendCertificateRequest {
   type: 'team' | 'individual';
+  eventId: string;
   teamId?: string;
   participantName?: string;
   participantEmail: string;
@@ -18,6 +29,7 @@ interface SendCertificateRequest {
 }
 
 interface SendBulkRequest {
+  eventId: string;
   recipients: Array<{
     type: 'team' | 'individual';
     teamId: string;
@@ -50,9 +62,10 @@ function getAchievementText(place: number): string {
   }
 }
 
-// Функция для расчета общего балла команды (обертка для импортированной функции)
+// Функция для расчета общего балла команды
 function calculateTotalScore(teamId: string, allScores: AggregatedScore[]): number {
-  return calculateTotalScoreFromStorage(allScores, teamId);
+  const teamScores = allScores.filter(s => s.teamId === teamId);
+  return teamScores.reduce((sum, score) => sum + score.averageScore, 0);
 }
 
 // Генерация PDF сертификата
@@ -67,8 +80,9 @@ async function generateCertificatePDF(
 async function generateCertificatePDF(
   type: 'team' | 'individual',
   certificateData: TeamCertificateProps | IndividualCertificateProps,
+  eventId: string,
 ): Promise<Buffer> {
-  const templates = await getCertificateTemplates();
+  const templates = await getCertificateTemplates(eventId);
 
   if (type === 'team') {
     const { default: TeamCertificate } = await import('@/components/certificates/TeamCertificate');
@@ -142,52 +156,70 @@ async function sendCertificateEmail(options: {
   if (!from) {
     throw new Error('EMAIL_FROM or EMAIL_USER must be configured');
   }
-  try {
-    const info = await transporter.sendMail({
-      from,
-      to: options.to,
-      subject: options.subject || 'Сертификат участника - Олимпиада по акушерству и гинекологии',
-      html: options.html,
-      attachments: [
-        {
-          filename: options.filename,
-          content: options.pdfBuffer,
-        },
-      ],
-    });
 
-    const smtpInfo = {
-      messageId: info.messageId,
-      accepted: info.accepted,
-      rejected: info.rejected,
-      response: info.response,
-    };
+  // Retry logic: 3 попытки с exponential backoff
+  const maxRetries = 3;
+  let lastError: Error | null = null;
 
-    console.log('SMTP result:', smtpInfo);
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const info = await transporter.sendMail({
+        from,
+        to: options.to,
+        subject: options.subject || 'Сертификат участника - Олимпиада по акушерству и гинекологии',
+        html: options.html,
+        attachments: [
+          {
+            filename: options.filename,
+            content: options.pdfBuffer,
+          },
+        ],
+      });
 
-    if (!info.accepted || info.accepted.length === 0) {
-      throw new Error('SMTP send failed: no recipients accepted');
+      const smtpInfo = {
+        messageId: info.messageId,
+        accepted: info.accepted,
+        rejected: info.rejected,
+        response: info.response,
+      };
+
+      console.log('SMTP result:', smtpInfo);
+
+      if (!info.accepted || info.accepted.length === 0) {
+        throw new Error('SMTP send failed: no recipients accepted');
+      }
+
+      return smtpInfo;
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error('SMTP error');
+      console.error(`SMTP send error (attempt ${attempt}/${maxRetries}):`, lastError.message);
+
+      if (attempt < maxRetries) {
+        // Exponential backoff: 1s, 2s, 4s
+        const delay = Math.pow(2, attempt - 1) * 1000;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
     }
-
-    return smtpInfo;
-  } catch (err) {
-    console.error('SMTP send error:', err);
-    const msg = err instanceof Error ? err.message : 'SMTP error';
-    throw new Error(`SMTP send failed: ${msg}`);
   }
+
+  throw new Error(`SMTP send failed after ${maxRetries} attempts: ${lastError?.message}`);
 }
 
 // Отправка одного сертификата
 async function sendSingleCertificate(request: SendCertificateRequest) {
-  const { type, teamId, participantName, participantEmail, specialAward } = request;
+  const { type, eventId, teamId, participantName, participantEmail, specialAward } = request;
+
+  if (!eventId) {
+    throw new Error('eventId обязателен');
+  }
 
   if (!teamId) {
     throw new Error('teamId обязателен');
   }
 
   // Получаем данные
-  const teams = await getTeams();
-  const scores = await getAggregatedScores();
+  const teams = await getTeamsByEventId(eventId);
+  const scores = await getScoresByEventId(eventId);
 
   const team = teams.find(t => t.id === teamId);
   if (!team) {
@@ -203,7 +235,7 @@ async function sendSingleCertificate(request: SendCertificateRequest) {
   const place = sortedScores.findIndex(s => s.teamId === teamId) + 1;
   const totalScore = teamTotals.find(t => t.teamId === teamId)?.totalScore || 0;
 
-  const templates = await getCertificateTemplates();
+  const templates = await getCertificateTemplates(eventId);
 
   // Данные сертификата
   const certificateData = {
@@ -233,8 +265,8 @@ async function sendSingleCertificate(request: SendCertificateRequest) {
   // Генерируем PDF
   const pdfBuffer =
     type === 'team'
-      ? await generateCertificatePDF('team', certificateData as TeamCertificateProps)
-      : await generateCertificatePDF('individual', certificateData as IndividualCertificateProps);
+      ? await generateCertificatePDF('team', certificateData as TeamCertificateProps, eventId)
+      : await generateCertificatePDF('individual', certificateData as IndividualCertificateProps, eventId);
 
   const eventName = templates.organizer.eventName;
   const organizerName = templates.organizer.name;
@@ -288,15 +320,62 @@ async function sendSingleCertificate(request: SendCertificateRequest) {
 // POST: Отправка сертификата одному получателю
 export async function POST(request: NextRequest) {
   try {
-    const authCookie = request.cookies.get('jury_id');
-    if (!authCookie?.value) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authResult = checkApiAuth(request, ['Admin', 'Event_Manager', 'Jury']);
+    if (!authResult.success) {
+      return authErrorResponse(authResult);
     }
-    const body: SendCertificateRequest = await request.json();
+    
+    let body: SendCertificateRequest;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: 'Некорректный JSON в теле запроса' },
+        { status: 400 }
+      );
+    }
+    
+    // Валидация UUID форматов
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (body.eventId && !uuidRegex.test(body.eventId)) {
+      return NextResponse.json(
+        { error: 'Некорректный формат eventId' },
+        { status: 400 }
+      );
+    }
+    if (body.teamId && !uuidRegex.test(body.teamId)) {
+      return NextResponse.json(
+        { error: 'Некорректный формат teamId' },
+        { status: 400 }
+      );
+    }
+    
+    // Проверка доступа к eventId для Jury
+    if (authResult.session.role === 'Jury' && authResult.session.eventId !== body.eventId) {
+      return NextResponse.json(
+        { error: 'Доступ запрещён: вы не назначены на это мероприятие' },
+        { status: 403 }
+      );
+    }
+    
+    if (!body.eventId) {
+      return NextResponse.json(
+        { error: 'eventId обязателен' },
+        { status: 400 }
+      );
+    }
     
     if (!body.participantEmail) {
       return NextResponse.json(
         { error: 'Email получателя обязателен' },
+        { status: 400 }
+      );
+    }
+
+    // Validate email format
+    if (!isValidEmail(body.participantEmail)) {
+      return NextResponse.json(
+        { error: 'Некорректный формат email' },
         { status: 400 }
       );
     }
@@ -324,15 +403,61 @@ export async function POST(request: NextRequest) {
 // PUT: Массовая отправка сертификатов
 export async function PUT(request: NextRequest) {
   try {
-    const authCookie = request.cookies.get('jury_id');
-    if (!authCookie?.value) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authResult = checkApiAuth(request, ['Admin', 'Event_Manager']);
+    if (!authResult.success) {
+      return authErrorResponse(authResult);
     }
-    const body: SendBulkRequest = await request.json();
+    
+    let body: SendBulkRequest;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: 'Некорректный JSON в теле запроса' },
+        { status: 400 }
+      );
+    }
+    
+    // Валидация UUID формата eventId
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (body.eventId && !uuidRegex.test(body.eventId)) {
+      return NextResponse.json(
+        { error: 'Некорректный формат eventId' },
+        { status: 400 }
+      );
+    }
+    
+    if (!body.eventId) {
+      return NextResponse.json(
+        { error: 'eventId обязателен' },
+        { status: 400 }
+      );
+    }
     
     if (!body.recipients || !Array.isArray(body.recipients) || body.recipients.length === 0) {
       return NextResponse.json(
         { error: 'Список получателей обязателен' },
+        { status: 400 }
+      );
+    }
+
+    // Validate all emails before sending
+    const invalidEmails = body.recipients.filter(r => !isValidEmail(r.participantEmail));
+    if (invalidEmails.length > 0) {
+      return NextResponse.json(
+        { 
+          error: 'Некорректные email адреса', 
+          invalidEmails: invalidEmails.map(r => r.participantEmail) 
+        },
+        { status: 400 }
+      );
+    }
+
+    // Limit bulk send to prevent abuse
+    const MAX_BULK_RECIPIENTS = 50;
+    if (body.recipients.length > MAX_BULK_RECIPIENTS) {
+      return NextResponse.json(
+        { error: `Максимум ${MAX_BULK_RECIPIENTS} получателей за один запрос` },
         { status: 400 }
       );
     }
@@ -343,7 +468,10 @@ export async function PUT(request: NextRequest) {
     // Отправляем сертификаты последовательно
     for (const recipient of body.recipients) {
       try {
-        const smtpInfo = await sendSingleCertificate(recipient);
+        const smtpInfo = await sendSingleCertificate({
+          ...recipient,
+          eventId: body.eventId,
+        });
         results.push({
           email: recipient.participantEmail,
           success: true,

@@ -130,6 +130,8 @@ const IndividualCertificate: React.FC<IndividualCertificateProps> = ({
   teamName,
   achievement,
   specialAward,
+  date,
+  eventName,
 }) => {
   // Определяем, является ли это призовым местом
   const isPrizePlace = achievement === 'I место' || 
@@ -153,8 +155,7 @@ const IndividualCertificate: React.FC<IndividualCertificateProps> = ({
 
           {/* Описание олимпиады */}
           <Text style={styles.eventText}>
-            в I Межвузовской студенческой олимпиаде по акушерству и гинекологии{'\n'}
-            им. профессора В.В. Горячева.
+            в {eventName}
           </Text>
 
           {/* Специальная награда */}
@@ -166,7 +167,7 @@ const IndividualCertificate: React.FC<IndividualCertificateProps> = ({
 
           {/* Дата */}
           <View style={styles.dateBox}>
-            <Text style={styles.dateText}>Самара, 04 ноября 2025 г.</Text>
+            <Text style={styles.dateText}>{date}</Text>
           </View>
         </View>
       </Page>

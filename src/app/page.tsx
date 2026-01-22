@@ -1,148 +1,123 @@
-import Link from "next/link";
+/**
+ * Home Page - главная страница
+ */
+
+import Link from 'next/link';
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      <div className="container mx-auto px-4 py-8">
-        <header className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-blue-900 mb-4">
-            Олимпиада по акушерству и гинекологии
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="max-w-7xl mx-auto px-4 py-16">
+        <div className="text-center mb-16">
+          <h1 className="text-5xl font-bold text-gray-900 mb-4">
+            Универсальная система олимпиад
           </h1>
-          <p className="text-xl text-gray-700 max-w-3xl mx-auto">
-            Система оценки межвузовской студенческой олимпиады по акушерству и гинекологии
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Современная платформа для проведения медицинских олимпиад и других
+            соревнований с гибкими критериями оценки
           </p>
-        </header>
+        </div>
 
-        <div className="grid md:grid-cols-2 gap-8 mb-12">
+        <div className="grid md:grid-cols-3 gap-8 mb-16">
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-semibold text-blue-800 mb-4">
-              Общая информация
-            </h2>
-            <div className="space-y-3 text-gray-700">
-              <p>
-                <strong>Формат проведения:</strong> командный зачет
-              </p>
-              <p>
-                <strong>Призовые места:</strong> 3 команды с наибольшим количеством баллов
-              </p>
-            </div>
+            <div className="text-blue-600 text-4xl mb-4">📊</div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Гибкие критерии
+            </h3>
+            <p className="text-gray-600">
+              Настраиваемые критерии оценки для каждого конкурса: числовые,
+              boolean, dropdown
+            </p>
           </div>
 
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-semibold text-blue-800 mb-4">
-              Навигация
-            </h2>
-            <div className="space-y-3">
-              <Link
-                href="/login"
-                className="block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
-              >
-                Вход для жюри
-              </Link>
-              <Link
-                href="/results"
-                className="block bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors"
-              >
-                Результаты
-              </Link>
-              <Link
-                href="/contests"
-                className="block bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition-colors"
-              >
-                Конкурсы
-              </Link>
-            </div>
+            <div className="text-blue-600 text-4xl mb-4">👥</div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Управление жюри
+            </h3>
+            <p className="text-gray-600">
+              Назначение жюри на конкурсы, история изменений оценок, агрегация
+              по жюри
+            </p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="text-blue-600 text-4xl mb-4">🏆</div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Результаты
+            </h3>
+            <p className="text-gray-600">
+              Автоматическое ранжирование, breakdown по конкурсам, экспорт в
+              PDF/Excel
+            </p>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-2xl font-semibold text-blue-800 mb-6">
-            Конкурсы
-          </h2>
-          <div className="space-y-6">
-            <div className="border-l-4 border-blue-500 pl-4">
-              <h3 className="text-xl font-semibold text-gray-800">
-                I конкурс. Визитка
-              </h3>
-              <p className="text-gray-600 mb-2">
-                Устная презентация и/или видеоролик (до 3 минут)
-              </p>
-              <p className="text-sm text-gray-500">
-                Максимальный балл: 6
-              </p>
-            </div>
-
-            <div className="border-l-4 border-green-500 pl-4">
-              <h3 className="text-xl font-semibold text-gray-800">
-                II конкурс. Клинический случай
-              </h3>
-              <p className="text-gray-600 mb-2">
-                Решение ситуационной задачи (10 минут)
-              </p>
-              <p className="text-sm text-gray-500">
-                Максимальный балл: 4
-              </p>
-            </div>
-
-            <div className="border-l-4 border-purple-500 pl-4">
-              <h3 className="text-xl font-semibold text-gray-800">
-                III конкурс. Практические навыки
-              </h3>
-              <div className="text-gray-600 mb-2">
-                <p>• Швы при кесаревом сечении (до 10 минут)</p>
-                <p>• Амбулаторный прием (10 минут)</p>
-                <p>• Акушерское пособие в родах (до 5 минут)</p>
-                <p>• Лапароскопический симулятор (до 10 минут)</p>
-              </div>
-              <p className="text-sm text-gray-500">
-                Максимальный балл: 48 (по 12 баллов за каждую станцию)
-              </p>
-            </div>
-
-            <div className="border-l-4 border-orange-500 pl-4">
-              <h3 className="text-xl font-semibold text-gray-800">
-                V конкурс. Битва умов
-              </h3>
-              <p className="text-gray-600 mb-2">
-                Вопросы командам-соперникам по тематикам: латинские термины, акушерство и гинекология в искусстве и литературе, ученые
-              </p>
-              <p className="text-sm text-gray-500">
-                Максимальный балл: 2
-              </p>
-            </div>
-
-            <div className="border-l-4 border-red-500 pl-4">
-              <h3 className="text-xl font-semibold text-gray-800">
-                VI конкурс. Вопрос от жюри
-              </h3>
-              <p className="text-gray-600 mb-2">
-                Дополнительные вопросы для команд, претендующих на призовые места
-              </p>
-              <p className="text-sm text-orange-600 font-medium mb-1">
-                ⚠️ Проводится только при необходимости
-              </p>
-              <p className="text-xs text-gray-500">
-                Используется при возникновении спорной ситуации при выборе призового места
-              </p>
-              <p className="text-sm text-gray-500 mt-1">
-                Максимальный балл: 2
-              </p>
-            </div>
-          </div>
+        <div className="flex justify-center gap-4">
+          <Link
+            href="/admin"
+            className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-lg"
+          >
+            Панель управления
+          </Link>
+          <Link
+            href="/results"
+            className="px-8 py-3 bg-white text-blue-600 border-2 border-blue-600 rounded-lg hover:bg-blue-50 font-medium text-lg"
+          >
+            Результаты
+          </Link>
+          <Link
+            href="/login"
+            className="px-8 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium text-lg"
+          >
+            Вход
+          </Link>
         </div>
 
-        <div className="mt-12 bg-blue-50 rounded-lg p-6">
-          <h2 className="text-2xl font-semibold text-blue-800 mb-4">
-            Награждение
+        <div className="mt-16 bg-white rounded-lg shadow-lg p-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Возможности системы
           </h2>
-          <div className="text-gray-700">
-            <h3 className="font-semibold mb-2">Командные награды:</h3>
-            <ul className="space-y-1 text-sm">
-              <li>• 1 место - освобождение от экзамена с оценкой «отлично»</li>
-              <li>• 2, 3 места - +1 балл к экзамену</li>
-              <li>• Победитель конкурса «Визитка» - +1 балл к экзамену</li>
-            </ul>
-          </div>
+          <ul className="grid md:grid-cols-2 gap-4 text-gray-700">
+            <li className="flex items-start">
+              <span className="text-blue-600 mr-2">✓</span>
+              Множественные мероприятия с разными конфигурациями
+            </li>
+            <li className="flex items-start">
+              <span className="text-blue-600 mr-2">✓</span>
+              Вложенные конкурсы (станции)
+            </li>
+            <li className="flex items-start">
+              <span className="text-blue-600 mr-2">✓</span>
+              Командные и индивидуальные участники
+            </li>
+            <li className="flex items-start">
+              <span className="text-blue-600 mr-2">✓</span>
+              Импорт участников из CSV
+            </li>
+            <li className="flex items-start">
+              <span className="text-blue-600 mr-2">✓</span>
+              Role-based доступ (Admin, Event Manager, Jury)
+            </li>
+            <li className="flex items-start">
+              <span className="text-blue-600 mr-2">✓</span>
+              Валидация границ оценок
+            </li>
+            <li className="flex items-start">
+              <span className="text-blue-600 mr-2">✓</span>
+              Аудит изменений оценок
+            </li>
+            <li className="flex items-start">
+              <span className="text-blue-600 mr-2">✓</span>
+              Tiebreaker при равных баллах
+            </li>
+          </ul>
+        </div>
+
+        <div className="mt-8 text-center text-gray-600">
+          <p>
+            Построено на Next.js 15, Redis, TypeScript
+          </p>
         </div>
       </div>
     </div>

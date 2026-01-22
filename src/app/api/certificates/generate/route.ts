@@ -4,10 +4,14 @@ import ReactPDF, { DocumentProps } from '@react-pdf/renderer';
 import { AggregatedScore } from '@/types';
 import type { TeamCertificateProps } from '@/components/certificates/TeamCertificate';
 import type { IndividualCertificateProps } from '@/components/certificates/IndividualCertificate';
-import { getAggregatedScores, getTeams, getCertificateTemplates, calculateTotalScore } from '@/utils/redisStorage';
+import { getTeamsByEventId } from '@/services/teamService';
+import { getScoresByEventId } from '@/services/scoreService';
+import { getCertificateTemplates } from '@/services/certificateService';
+import { checkApiAuth, authErrorResponse } from '@/lib/api-auth';
 
 interface GenerateCertificateRequest {
   type: 'team' | 'individual';
+  eventId: string;
   teamId?: string;
   participantName?: string;
   specialAward?: string;
@@ -36,23 +40,63 @@ function getAchievementText(place: number): string {
   }
 }
 
-// Функция для расчета общего балла команды (обертка для импортированной функции)
-function getTeamTotalScore(teamId: string, allScores: AggregatedScore[]): number {
-  return calculateTotalScore(allScores, teamId);
+// Функция для расчета общего балла команды
+function calculateTotalScore(teamId: string, allScores: AggregatedScore[]): number {
+  const teamScores = allScores.filter(s => s.teamId === teamId);
+  return teamScores.reduce((sum, score) => sum + score.averageScore, 0);
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const authCookie = request.cookies.get('jury_id');
-    if (!authCookie?.value) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authResult = checkApiAuth(request, ['Admin', 'Event_Manager', 'Jury']);
+    if (!authResult.success) {
+      return authErrorResponse(authResult);
     }
-    const body: GenerateCertificateRequest = await request.json();
-    const { type, teamId, participantName, specialAward } = body;
+    
+    let body: GenerateCertificateRequest;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: 'Некорректный JSON в теле запроса' },
+        { status: 400 }
+      );
+    }
+    
+    // Валидация eventId формата UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (body.eventId && !uuidRegex.test(body.eventId)) {
+      return NextResponse.json(
+        { error: 'Некорректный формат eventId' },
+        { status: 400 }
+      );
+    }
+    if (body.teamId && !uuidRegex.test(body.teamId)) {
+      return NextResponse.json(
+        { error: 'Некорректный формат teamId' },
+        { status: 400 }
+      );
+    }
+    
+    // Проверка доступа к eventId для Jury
+    if (authResult.session.role === 'Jury' && authResult.session.eventId !== body.eventId) {
+      return NextResponse.json(
+        { error: 'Доступ запрещён: вы не назначены на это мероприятие' },
+        { status: 403 }
+      );
+    }
+    const { type, eventId, teamId, participantName, specialAward } = body;
 
-    // Получаем данные о командах и результатах
-    const teams = await getTeams();
-    const scores = await getAggregatedScores();
+    if (!eventId) {
+      return NextResponse.json(
+        { error: 'eventId обязателен' },
+        { status: 400 }
+      );
+    }
+
+    // Получаем данные о командах и результатах для мероприятия
+    const teams = await getTeamsByEventId(eventId);
+    const scores = await getScoresByEventId(eventId);
 
     if (type === 'team' && teamId) {
       // Генерация командного сертификата
@@ -65,7 +109,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Рассчитываем общий балл команды
-      const totalScore = getTeamTotalScore(teamId, scores);
+      const totalScore = calculateTotalScore(teamId, scores);
       
       if (totalScore === 0) {
         return NextResponse.json(
@@ -77,13 +121,13 @@ export async function POST(request: NextRequest) {
       // Определяем место команды
       const teamTotals = teams.map(t => ({
         teamId: t.id,
-        totalScore: getTeamTotalScore(t.id, scores as AggregatedScore[])
+        totalScore: calculateTotalScore(t.id, scores)
       }));
       const sortedScores = teamTotals.sort((a, b) => b.totalScore - a.totalScore);
       const place = sortedScores.findIndex(s => s.teamId === teamId) + 1;
 
       // Динамический импорт компонента
-      const templates = await getCertificateTemplates();
+      const templates = await getCertificateTemplates(eventId);
 
       const certificateData: TeamCertificateProps = {
         teamName: team.name,
@@ -146,13 +190,13 @@ export async function POST(request: NextRequest) {
       // Определяем место команды
       const teamTotals = teams.map(t => ({
         teamId: t.id,
-        totalScore: getTeamTotalScore(t.id, scores)
+        totalScore: calculateTotalScore(t.id, scores)
       }));
       const sortedScores = teamTotals.sort((a, b) => b.totalScore - a.totalScore);
       const place = sortedScores.findIndex(s => s.teamId === teamId) + 1;
 
       // Динамический импорт компонента
-      const templates = await getCertificateTemplates();
+      const templates = await getCertificateTemplates(eventId);
 
       const certificateData: IndividualCertificateProps = {
         participantName,

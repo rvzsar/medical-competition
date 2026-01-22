@@ -1,31 +1,70 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAggregatedScores, getTeams } from '@/utils/redisStorage';
+import { getTeamsByEventId } from '@/services/teamService';
+import { getScoresByEventId } from '@/services/scoreService';
+import { getCertificateTemplates } from '@/services/certificateService';
+import { checkApiAuth, authErrorResponse } from '@/lib/api-auth';
 
 export async function GET(request: NextRequest) {
   try {
-    const authCookie = request.cookies.get('jury_id');
-    if (!authCookie?.value) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    const authResult = checkApiAuth(request, ['Admin', 'Event_Manager', 'Jury']);
+    if (!authResult.success) {
+      return authErrorResponse(authResult);
     }
-    const teams = await getTeams();
-    const scores = await getAggregatedScores();
+
+    const { searchParams } = new URL(request.url);
+    const eventId = searchParams.get('eventId');
+
+    if (!eventId) {
+      return NextResponse.json(
+        { success: false, error: 'eventId обязателен' },
+        { status: 400 }
+      );
+    }
+    
+    // Валидация UUID формата
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(eventId)) {
+      return NextResponse.json(
+        { success: false, error: 'Некорректный формат eventId' },
+        { status: 400 }
+      );
+    }
+    
+    // Проверка доступа к eventId для Jury
+    if (authResult.session.role === 'Jury' && authResult.session.eventId !== eventId) {
+      return NextResponse.json(
+        { success: false, error: 'Доступ запрещён' },
+        { status: 403 }
+      );
+    }
+
+    const teams = await getTeamsByEventId(eventId);
+    const scores = await getScoresByEventId(eventId);
+    const templates = await getCertificateTemplates(eventId);
 
     const envCheck = {
       redis: !!process.env.REDIS_URL,
-      emailHost: !!process.env.EMAIL_HOST,
       emailUser: !!process.env.EMAIL_USER,
+      emailPass: !!process.env.EMAIL_PASS,
       emailFrom: !!process.env.EMAIL_FROM,
+      sessionSecret: !!process.env.SESSION_SECRET,
+      csrfSecret: !!process.env.CSRF_SECRET,
     };
 
     return NextResponse.json({
       success: true,
-      message: 'API работает корректно',
+      message: 'API сертификатов работает корректно',
       data: {
+        eventId,
         teamsCount: teams.length,
         scoresCount: scores.length,
+        templatesConfigured: !!templates.organizer.eventName,
         environmentVariables: envCheck,
       },
-      teams,
+      templates: {
+        eventName: templates.organizer.eventName,
+        organizerName: templates.organizer.name,
+      },
     });
   } catch (error) {
     return NextResponse.json(

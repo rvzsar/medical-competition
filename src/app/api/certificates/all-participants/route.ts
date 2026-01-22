@@ -3,71 +3,56 @@ import React from 'react';
 import ReactPDF, { DocumentProps } from '@react-pdf/renderer';
 import JSZip from 'jszip';
 import { Document, Packer, Paragraph, TextRun, AlignmentType, PageOrientation } from 'docx';
-import { getTeams } from '@/utils/redisStorage';
+import { getTeamsByEventId } from '@/services/teamService';
+import { getEventById } from '@/services/eventService';
+import { getCertificateTemplates } from '@/services/certificateService';
+import { checkApiAuth, authErrorResponse } from '@/lib/api-auth';
 
 // Генерация DOCX сертификата участника
-// A5: 148mm x 210mm (portrait), для landscape переворачиваем
-// В docx для landscape указываем portrait размеры, библиотека сама перевернёт
-async function generateParticipantDocx(participantName: string): Promise<Buffer> {
+async function generateParticipantDocx(
+  participantName: string,
+  eventName: string,
+  eventDate: string,
+  eventLocation: string
+): Promise<Buffer> {
   const doc = new Document({
     sections: [{
       properties: {
         page: {
           size: {
-            // A5 portrait размеры (библиотека перевернёт для landscape)
-            // 148mm x 210mm -> станет 210mm x 148mm
-            width: 8391,   // 148mm в twips
-            height: 11906, // 210mm в twips
+            width: 8391,
+            height: 11906,
             orientation: PageOrientation.LANDSCAPE,
           },
           margin: {
-            // После поворота: top/bottom - это короткие стороны (148мм)
-            // left/right - это длинные стороны (210мм)
-            // Сверху ~45мм (под заголовком "СЕРТИФИКАТ")
             top: 2550,
-            // Снизу ~40мм (над подписью ректора и печатью)
             bottom: 2270,
-            // По бокам ~30мм
             left: 1700,
             right: 1700,
           },
         },
       },
       children: [
-        // Заголовок "ОБ УЧАСТИИ"
         new Paragraph({
           alignment: AlignmentType.CENTER,
           spacing: { after: 300 },
           children: [
             new TextRun({
               text: 'ОБ УЧАСТИИ',
-              size: 28, // 14pt
+              size: 28,
               font: 'Times New Roman',
             }),
           ],
         }),
-        // Имя участника с подчеркиванием
         new Paragraph({
           alignment: AlignmentType.CENTER,
           spacing: { after: 200 },
           children: [
             new TextRun({
               text: participantName,
-              size: 26, // 13pt
+              size: 26,
               font: 'Times New Roman',
               underline: {},
-            }),
-          ],
-        }),
-        // Описание олимпиады
-        new Paragraph({
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 80 },
-          children: [
-            new TextRun({
-              text: 'в I Межвузовской студенческой олимпиаде по акушерству и гинекологии',
-              size: 22, // 11pt
-              font: 'Times New Roman',
             }),
           ],
         }),
@@ -76,19 +61,18 @@ async function generateParticipantDocx(participantName: string): Promise<Buffer>
           spacing: { after: 300 },
           children: [
             new TextRun({
-              text: 'им. профессора В.В. Горячева.',
+              text: `в ${eventName}`,
               size: 22,
               font: 'Times New Roman',
             }),
           ],
         }),
-        // Дата
         new Paragraph({
           alignment: AlignmentType.CENTER,
           children: [
             new TextRun({
-              text: 'Самара, 04 ноября 2025 г.',
-              size: 20, // 10pt
+              text: `${eventLocation ? eventLocation + ', ' : ''}${eventDate}`,
+              size: 20,
               font: 'Times New Roman',
               shading: { fill: 'CCCCCC' },
             }),
@@ -103,16 +87,76 @@ async function generateParticipantDocx(participantName: string): Promise<Buffer>
 
 export async function POST(request: NextRequest) {
   try {
-    const authCookie = request.cookies.get('jury_id');
-    if (!authCookie?.value) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authResult = checkApiAuth(request, ['Admin', 'Event_Manager', 'Jury']);
+    if (!authResult.success) {
+      return authErrorResponse(authResult);
     }
 
-    const body = await request.json();
-    const { teamIds, format = 'pdf' } = body; // format: 'pdf' или 'docx'
+    let body: { eventId?: string; teamIds?: string[]; format?: string };
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: 'Некорректный JSON в теле запроса' },
+        { status: 400 }
+      );
+    }
+    
+    const { eventId, teamIds, format = 'pdf' } = body;
+    
+    // Валидация UUID форматов
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (eventId && !uuidRegex.test(eventId)) {
+      return NextResponse.json(
+        { error: 'Некорректный формат eventId' },
+        { status: 400 }
+      );
+    }
+    if (teamIds && Array.isArray(teamIds)) {
+      for (const teamId of teamIds) {
+        if (!uuidRegex.test(teamId)) {
+          return NextResponse.json(
+            { error: 'Некорректный формат teamId в массиве' },
+            { status: 400 }
+          );
+        }
+      }
+    }
+    
+    // Валидация формата
+    if (format !== 'pdf' && format !== 'docx') {
+      return NextResponse.json(
+        { error: 'Формат должен быть pdf или docx' },
+        { status: 400 }
+      );
+    }
+    
+    // Проверка доступа к eventId для Jury
+    if (authResult.session.role === 'Jury' && authResult.session.eventId !== eventId) {
+      return NextResponse.json(
+        { error: 'Доступ запрещён: вы не назначены на это мероприятие' },
+        { status: 403 }
+      );
+    }
 
-    // Получаем все команды
-    const teams = await getTeams();
+    if (!eventId) {
+      return NextResponse.json(
+        { error: 'eventId обязателен' },
+        { status: 400 }
+      );
+    }
+
+    // Получаем данные мероприятия
+    const event = await getEventById(eventId);
+    if (!event) {
+      return NextResponse.json(
+        { error: 'Мероприятие не найдено' },
+        { status: 404 }
+      );
+    }
+
+    const templates = await getCertificateTemplates(eventId);
+    const teams = await getTeamsByEventId(eventId);
 
     // Фильтруем команды если указаны конкретные
     const selectedTeams = teamIds && teamIds.length > 0
@@ -122,11 +166,13 @@ export async function POST(request: NextRequest) {
     // Собираем всех участников
     const allParticipants: { name: string; teamName: string }[] = [];
     for (const team of selectedTeams) {
-      for (const member of team.members) {
-        allParticipants.push({
-          name: member,
-          teamName: team.name,
-        });
+      if (team.members && Array.isArray(team.members)) {
+        for (const member of team.members) {
+          allParticipants.push({
+            name: typeof member === 'string' ? member : `${member}`,
+            teamName: team.name,
+          });
+        }
       }
     }
 
@@ -138,7 +184,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Ограничение для Vercel
-    const MAX_PARTICIPANTS = format === 'docx' ? 30 : 15; // DOCX быстрее генерируется
+    const MAX_PARTICIPANTS = format === 'docx' ? 30 : 15;
     if (allParticipants.length > MAX_PARTICIPANTS) {
       return NextResponse.json(
         { 
@@ -150,14 +196,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Форматируем дату
+    const eventDate = event.startDate 
+      ? new Date(event.startDate).toLocaleDateString('ru-RU', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        })
+      : new Date().toLocaleDateString('ru-RU', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        });
+
+    const eventLocation = event.location || '';
+    const eventName = templates.organizer.eventName || event.name;
+
     // Создаем ZIP архив
     const zip = new JSZip();
     const fileExtension = format === 'docx' ? 'docx' : 'pdf';
 
     if (format === 'docx') {
-      // Генерация DOCX
       for (const participant of allParticipants) {
-        const docxBuffer = await generateParticipantDocx(participant.name);
+        const docxBuffer = await generateParticipantDocx(
+          participant.name,
+          eventName,
+          eventDate,
+          eventLocation
+        );
         
         const safeTeamName = participant.teamName.replace(/[^a-zA-Zа-яА-ЯёЁ0-9]/g, '_');
         const safeName = participant.name.replace(/[^a-zA-Zа-яА-ЯёЁ0-9]/g, '_');
@@ -166,7 +232,6 @@ export async function POST(request: NextRequest) {
         zip.file(fileName, docxBuffer);
       }
     } else {
-      // Генерация PDF
       const { default: ParticipantCertificate } = await import(
         '@/components/certificates/ParticipantCertificate'
       );
@@ -175,6 +240,9 @@ export async function POST(request: NextRequest) {
         const pdfStream = await ReactPDF.renderToStream(
           React.createElement(ParticipantCertificate, {
             participantName: participant.name,
+            eventName,
+            eventDate: event.startDate,
+            eventLocation,
           }) as React.ReactElement<DocumentProps>
         );
 
@@ -195,7 +263,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Генерируем ZIP
     const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
 
     return new NextResponse(zipBuffer as unknown as BodyInit, {
@@ -216,21 +283,48 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET - получить список всех участников
+// GET - получить список всех участников мероприятия
 export async function GET(request: NextRequest) {
   try {
-    const authCookie = request.cookies.get('jury_id');
-    if (!authCookie?.value) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authResult = checkApiAuth(request, ['Admin', 'Event_Manager', 'Jury']);
+    if (!authResult.success) {
+      return authErrorResponse(authResult);
     }
 
-    const teams = await getTeams();
+    const { searchParams } = new URL(request.url);
+    const eventId = searchParams.get('eventId');
+
+    if (!eventId) {
+      return NextResponse.json(
+        { error: 'eventId обязателен' },
+        { status: 400 }
+      );
+    }
+    
+    // Валидация UUID формата
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(eventId)) {
+      return NextResponse.json(
+        { error: 'Некорректный формат eventId' },
+        { status: 400 }
+      );
+    }
+    
+    // Проверка доступа к eventId для Jury
+    if (authResult.session.role === 'Jury' && authResult.session.eventId !== eventId) {
+      return NextResponse.json(
+        { error: 'Доступ запрещён' },
+        { status: 403 }
+      );
+    }
+
+    const teams = await getTeamsByEventId(eventId);
 
     const participants = teams.map(team => ({
       teamId: team.id,
       teamName: team.name,
-      members: team.members,
-      count: team.members.length,
+      members: team.members || [],
+      count: (team.members || []).length,
     }));
 
     const totalCount = participants.reduce((sum, t) => sum + t.count, 0);

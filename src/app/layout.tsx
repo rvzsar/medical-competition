@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import Navigation from "@/components/Navigation";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Система оценки медицинского конкурса",
-  description: "Система для оценки конкурсов по акушерству и гинекологии",
+  title: "Универсальная система олимпиад",
+  description: "Система для проведения и оценки олимпиад любого типа",
 };
 
 export default function RootLayout({
@@ -27,7 +29,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <ErrorBoundary>
+          <Navigation />
+          <main>
+            {children}
+          </main>
+        </ErrorBoundary>
       </body>
     </html>
   );

@@ -2,10 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import React from 'react';
 import ReactPDF, { DocumentProps } from '@react-pdf/renderer';
 import JSZip from 'jszip';
-import { getTeams, getAggregatedScores, getCertificateTemplates, calculateTotalScore } from '@/utils/redisStorage';
+import { getTeamsByEventId } from '@/services/teamService';
+import { getScoresByEventId } from '@/services/scoreService';
+import { getCertificateTemplates } from '@/services/certificateService';
 import type { IndividualCertificateProps } from '@/components/certificates/IndividualCertificate';
+import type { AggregatedScore } from '@/types';
+import { checkApiAuth, authErrorResponse } from '@/lib/api-auth';
 
 interface BulkGenerateRequest {
+  eventId: string;
   teamId: string;
   participants: string[]; // Имена участников для генерации
 }
@@ -16,10 +21,10 @@ function generateCertificateNumber(): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-  return `OG-${year}${month}-${random}`;
+  return `CERT-${year}${month}-${random}`;
 }
 
-// Получение текста достижения для места (нейтральная форма)
+// Получение текста достижения для места
 function getAchievementText(place: number): string {
   switch (place) {
     case 1:
@@ -33,20 +38,66 @@ function getAchievementText(place: number): string {
   }
 }
 
-// Функция для расчета общего балла команды (обертка для импортированной функции)
-function getTeamTotalScore(teamId: string, allScores: any[]): number {
-  return calculateTotalScore(allScores, teamId);
+// Расчет общего балла команды
+function calculateTeamTotalScore(teamId: string, scores: AggregatedScore[]): number {
+  const teamScores = scores.filter(s => s.teamId === teamId);
+  return teamScores.reduce((sum, score) => sum + score.averageScore, 0);
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const authCookie = request.cookies.get('jury_id');
-    if (!authCookie?.value) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authResult = checkApiAuth(request, ['Admin', 'Event_Manager', 'Jury']);
+    if (!authResult.success) {
+      return authErrorResponse(authResult);
     }
 
-    const body: BulkGenerateRequest = await request.json();
-    const { teamId, participants } = body;
+    let body: BulkGenerateRequest;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: 'Некорректный JSON в теле запроса' },
+        { status: 400 }
+      );
+    }
+    
+    // Валидация UUID форматов
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (body.eventId && !uuidRegex.test(body.eventId)) {
+      return NextResponse.json(
+        { error: 'Некорректный формат eventId' },
+        { status: 400 }
+      );
+    }
+    if (body.teamId && !uuidRegex.test(body.teamId)) {
+      return NextResponse.json(
+        { error: 'Некорректный формат teamId' },
+        { status: 400 }
+      );
+    }
+    
+    // Санитизация имён участников (защита от path traversal в ZIP)
+    if (body.participants) {
+      body.participants = body.participants.map(name => 
+        name.replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').slice(0, 100)
+      );
+    }
+    
+    // Проверка доступа к eventId для Jury
+    if (authResult.session.role === 'Jury' && authResult.session.eventId !== body.eventId) {
+      return NextResponse.json(
+        { error: 'Доступ запрещён: вы не назначены на это мероприятие' },
+        { status: 403 }
+      );
+    }
+    const { eventId, teamId, participants } = body;
+
+    if (!eventId) {
+      return NextResponse.json(
+        { error: 'eventId обязателен' },
+        { status: 400 }
+      );
+    }
 
     if (!teamId || !participants || participants.length === 0) {
       return NextResponse.json(
@@ -68,9 +119,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Получаем данные
-    const teams = await getTeams();
-    const scores = await getAggregatedScores();
-    const templates = await getCertificateTemplates();
+    const teams = await getTeamsByEventId(eventId);
+    const scores = await getScoresByEventId(eventId);
+    const templates = await getCertificateTemplates(eventId);
 
     const team = teams.find(t => t.id === teamId);
     if (!team) {
@@ -83,7 +134,7 @@ export async function POST(request: NextRequest) {
     // Определяем место команды
     const teamTotals = teams.map(t => ({
       teamId: t.id,
-      totalScore: getTeamTotalScore(t.id, scores)
+      totalScore: calculateTeamTotalScore(t.id, scores)
     }));
     const sortedScores = teamTotals.sort((a, b) => b.totalScore - a.totalScore);
     const place = sortedScores.findIndex(s => s.teamId === teamId) + 1;

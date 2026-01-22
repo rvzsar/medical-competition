@@ -31,8 +31,7 @@ Font.register({
   ],
 });
 
-// A5 landscape для печати на готовом бланке РЕАВИЗ
-// Текст размещается в центральной области между заголовком "СЕРТИФИКАТ" и подписью/печатью
+// A5 landscape для печати на готовом бланке
 const styles = StyleSheet.create({
   page: {
     flexDirection: 'column',
@@ -40,17 +39,15 @@ const styles = StyleSheet.create({
     padding: 0,
     fontFamily: 'Roboto',
   },
-  // Контент размещается в центре страницы, с отступами от шапки и подписи
   content: {
     position: 'absolute',
-    top: 95,      // Отступ от верха (под "СЕРТИФИКАТ")
+    top: 95,
     left: 60,
     right: 60,
-    bottom: 85,   // Отступ снизу (над подписью и печатью)
+    bottom: 85,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  // Заголовок "ОБ УЧАСТИИ"
   title: {
     fontSize: 14,
     fontWeight: 400,
@@ -59,26 +56,22 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     letterSpacing: 2,
   },
-  // Контейнер для имени с линией
   nameContainer: {
     width: '100%',
     alignItems: 'center',
     marginBottom: 15,
   },
-  // Линия для имени
   nameLine: {
     width: 320,
     borderBottom: '1px solid #333333',
     paddingBottom: 3,
   },
-  // Имя участника
   participantName: {
     fontSize: 13,
     fontWeight: 400,
     color: '#333333',
     textAlign: 'center',
   },
-  // Текст описания олимпиады
   eventText: {
     fontSize: 11,
     fontWeight: 400,
@@ -87,7 +80,6 @@ const styles = StyleSheet.create({
     lineHeight: 1.4,
     marginBottom: 25,
   },
-  // Дата
   dateBox: {
     backgroundColor: '#CCCCCC',
     paddingHorizontal: 12,
@@ -103,11 +95,31 @@ const styles = StyleSheet.create({
 
 export interface ParticipantCertificateProps {
   participantName: string;
+  eventName?: string;
+  eventDate?: string;
+  eventLocation?: string;
 }
 
 const ParticipantCertificate: React.FC<ParticipantCertificateProps> = ({
   participantName,
+  eventName = 'Олимпиада',
+  eventDate,
+  eventLocation = '',
 }) => {
+  const formattedDate = eventDate 
+    ? new Date(eventDate).toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
+    : new Date().toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
+
+  const locationText = eventLocation ? `${eventLocation}, ` : '';
+
   return (
     <Document>
       <Page size="A5" orientation="landscape" style={styles.page}>
@@ -122,15 +134,14 @@ const ParticipantCertificate: React.FC<ParticipantCertificateProps> = ({
             </View>
           </View>
 
-          {/* Описание олимпиады */}
+          {/* Описание мероприятия */}
           <Text style={styles.eventText}>
-            в I Межвузовской студенческой олимпиаде по акушерству и гинекологии{'\n'}
-            им. профессора В.В. Горячева.
+            в {eventName}
           </Text>
 
           {/* Дата */}
           <View style={styles.dateBox}>
-            <Text style={styles.dateText}>Самара, 04 ноября 2025 г.</Text>
+            <Text style={styles.dateText}>{locationText}{formattedDate}</Text>
           </View>
         </View>
       </Page>

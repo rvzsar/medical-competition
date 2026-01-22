@@ -1,165 +1,128 @@
-"use client";
+/**
+ * Login Page - страница входа
+ * 
+ * Requirements: 9.1, 9.2
+ */
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { JuryMember } from "@/types";
-import { JURY_MEMBERS } from "@/config/juryMembers";
+'use client';
+
+import { useState, useTransition, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { login } from '@/actions/auth';
+import { generateCSRFToken } from '@/lib/csrf';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [selectedJury, setSelectedJury] = useState<string>("");
-  const [error, setError] = useState<string>("");
-  const [accessPin, setAccessPin] = useState<string>("");
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const [csrfToken, setCsrfToken] = useState('');
 
-  const juryMembers: JuryMember[] = JURY_MEMBERS;
+  // Генерировать CSRF токен при монтировании
+  useEffect(() => {
+    generateCSRFToken().then(setCsrfToken);
+  }, []);
 
-  const handleLogin = async () => {
-    if (!selectedJury) {
-      setError("Пожалуйста, выберите члена жюри");
-      return;
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isPending) return;
 
-    if (!accessPin.trim()) {
-      setError("Введите PIN доступа, который вы получили от организаторов");
-      return;
-    }
+    setError(null);
 
-    const jury = juryMembers.find(j => j.id === selectedJury);
-    if (!jury) {
-      setError("Выбранный член жюри не найден");
-      return;
-    }
+    startTransition(async () => {
+      const result = await login(username, password, csrfToken);
 
-    // Сохраняем информацию о текущем члене жюри в localStorage
-    localStorage.setItem('currentJury', JSON.stringify(jury));
-
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ juryId: jury.id, accessPin: accessPin.trim() }),
-      });
-
-      const result = await response.json().catch(() => ({}));
-
-      if (!response.ok || !result.success) {
-        setError(result.error || 'Неверный PIN или ошибка при создании сессии');
-        return;
+      if (result.success) {
+        // Редирект в зависимости от роли
+        if (result.role === 'Jury') {
+          router.push('/contests');
+        } else {
+          router.push('/admin');
+        }
+      } else {
+        setError(result.error || 'Ошибка входа');
       }
-
-      router.push('/admin');
-    } catch (e) {
-      console.error('Login error:', e);
-      setError('Ошибка входа. Проверьте подключение к сети.');
-    }
+    });
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-blue-900 mb-2">
-            Вход для жюри
-          </h1>
-          <p className="text-gray-600">
-            Олимпиада по акушерству и гинекологии
-          </p>
-        </div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">
+          Вход в систему
+        </h1>
 
-        <div className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Выберите члена жюри
-            </label>
-            <select
-              value={selectedJury}
-              onChange={(e) => {
-                setSelectedJury(e.target.value);
-                setError("");
-              }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Выберите из списка...</option>
-              {juryMembers.map((jury) => (
-                <option key={jury.id} value={jury.id}>
-                  {jury.name}
-                </option>
-              ))}
-            </select>
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800" role="alert">
+            {error}
           </div>
+        )}
 
+        <form onSubmit={handleSubmit} className="space-y-4" aria-label="Форма входа">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              PIN доступа для жюри
+            <label
+              htmlFor="username"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Имя пользователя
             </label>
             <input
-              type="password"
-              value={accessPin}
-              onChange={(e) => {
-                setAccessPin(e.target.value);
-                setError("");
-              }}
-              placeholder="Введите PIN, выданный организаторами"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              type="text"
+              id="username"
+              name="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+              aria-required="true"
+              disabled={isPending}
             />
           </div>
 
-          {selectedJury && (
-            <div className="bg-blue-50 p-4 rounded-md">
-              <p className="text-sm font-medium text-blue-800">
-                {juryMembers.find(j => j.id === selectedJury)?.title}
-              </p>
-            </div>
-          )}
-
-          {error && (
-            <div className="bg-red-50 text-red-700 p-3 rounded-md text-sm">
-              {error}
-            </div>
-          )}
+          <div>
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Пароль
+            </label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+              aria-required="true"
+              disabled={isPending}
+            />
+          </div>
 
           <button
-            onClick={handleLogin}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            type="submit"
+            disabled={isPending}
+            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50"
+            aria-busy={isPending}
           >
-            Войти в систему
+            {isPending ? 'Вход...' : 'Войти'}
           </button>
-        </div>
+        </form>
 
-        <div className="mt-6 text-center">
-          <Link
-            href="/"
-            className="text-blue-600 hover:text-blue-800 text-sm"
-          >
-            Вернуться на главную страницу
-          </Link>
-        </div>
-
-        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-blue-800 mb-2">📋 Что делать после входа</h3>
-          <div className="text-xs text-blue-700 space-y-1">
-            <p>1. Вы попадёте на панель жюри со списком конкурсов</p>
-            <p>2. Выбирайте конкурс и оценивайте команды по критериям</p>
-            <p>3. Оценки сохраняются автоматически на сервере</p>
-            <p>4. Можно редактировать оценки до блокировки организатором</p>
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-6 text-center text-sm text-gray-600">
+            <p>Демо-доступ (только для разработки):</p>
+            <div className="mt-2 space-y-1">
+              <p>
+                <strong>Admin:</strong> admin / admin123
+              </p>
+              <p>
+                <strong>Менеджер:</strong> manager / manager123
+              </p>
+            </div>
           </div>
-        </div>
-
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Состав жюри:</h3>
-          <ul className="text-xs text-gray-600 space-y-2">
-            {juryMembers.map((jury) => (
-              <li key={jury.id} className="flex items-start">
-                <span className="text-green-500 mr-2">•</span>
-                <div>
-                  <div className="font-medium">{jury.name}</div>
-                  <div className="text-gray-500">{jury.title}</div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
+        )}
       </div>
     </div>
   );

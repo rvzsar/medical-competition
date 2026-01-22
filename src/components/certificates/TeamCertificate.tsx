@@ -125,6 +125,8 @@ const TeamCertificate: React.FC<TeamCertificateProps> = ({
   teamName,
   place,
   score,
+  date,
+  eventName,
 }) => {
   const getPlaceText = (place: number): string => {
     switch (place) {
@@ -155,8 +157,7 @@ const TeamCertificate: React.FC<TeamCertificateProps> = ({
 
           {/* Описание олимпиады */}
           <Text style={styles.eventText}>
-            в I Межвузовской студенческой олимпиаде по акушерству и гинекологии{'\n'}
-            им. профессора В.В. Горячева.
+            в {eventName}
           </Text>
 
           {/* Баллы */}
@@ -167,7 +168,7 @@ const TeamCertificate: React.FC<TeamCertificateProps> = ({
 
           {/* Дата */}
           <View style={styles.dateBox}>
-            <Text style={styles.dateText}>Самара, 04 ноября 2025 г.</Text>
+            <Text style={styles.dateText}>{date}</Text>
           </View>
         </View>
       </Page>

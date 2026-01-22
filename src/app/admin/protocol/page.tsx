@@ -1,7 +1,14 @@
 "use client";
 
+/**
+ * Протокол оценок жюри
+ * 
+ * Показывает историю всех изменений оценок в системе.
+ * Работает с универсальной системой мероприятий.
+ */
+
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import Breadcrumbs from "@/components/Breadcrumbs";
 
 interface ScoreLogEntry {
   timestamp: string;
@@ -10,21 +17,12 @@ interface ScoreLogEntry {
   teamId: string;
   teamName: string;
   contestId: string;
+  contestName?: string;
+  eventId?: string;
+  eventName?: string;
   previousScore: number | null;
   newScore: number;
 }
-
-const contestNames: Record<string, string> = {
-  "visit-card": "I. Визитка",
-  "clinical-case": "II. Клинический случай",
-  "practical-skills": "III. Практические навыки",
-  "sutures": "III. Швы при кесаревом сечении",
-  "outpatient": "III. Амбулаторный прием",
-  "obstetric": "III. Акушерское пособие",
-  "laparoscopy": "III. Лапароскопия",
-  "mind-battle": "V. Битва умов",
-  "jury-question": "VI. Вопрос от жюри",
-};
 
 export default function ProtocolPage() {
   const [entries, setEntries] = useState<ScoreLogEntry[]>([]);
@@ -54,90 +52,138 @@ export default function ProtocolPage() {
     load();
   }, []);
 
+  // Форматирование названия конкурса
+  const formatContestName = (entry: ScoreLogEntry): string => {
+    // Если есть название конкурса из API - используем его
+    if (entry.contestName) {
+      return entry.contestName;
+    }
+    // Иначе показываем ID
+    return entry.contestId;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
-        <header className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Протокол оценок жюри</h1>
-            <p className="text-gray-600 mt-1 text-sm">
-              Краткий журнал всех изменений баллов: кто, когда и какой балл поставил или изменил.
-            </p>
-          </div>
-          <Link
-            href="/admin"
-            className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 text-sm"
-          >
-            ← Назад в панель жюри
-          </Link>
+        {/* Breadcrumbs */}
+        <Breadcrumbs 
+          items={[
+            { label: 'Мероприятия', href: '/admin' },
+            { label: 'Протокол оценок' }
+          ]}
+          className="mb-4"
+        />
+
+        <header className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">Протокол оценок жюри</h1>
+          <p className="text-gray-600 mt-1 text-sm">
+            Журнал всех изменений баллов: кто, когда и какой балл поставил или изменил.
+          </p>
         </header>
 
         {loading && (
-          <div className="text-gray-600">Загрузка протокола…</div>
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="ml-3 text-gray-600">Загрузка протокола…</span>
+          </div>
         )}
 
         {!loading && error && (
-          <div className="mb-4 rounded-lg bg-red-100 border border-red-300 p-3 text-sm text-red-800">
-            {error}
+          <div className="mb-4 rounded-lg bg-red-100 border border-red-300 p-4 text-sm text-red-800" role="alert">
+            <strong>Ошибка:</strong> {error}
           </div>
         )}
 
         {!loading && !error && entries.length === 0 && (
-          <div className="text-gray-600 text-sm">Пока нет записей в протоколе.</div>
+          <div className="bg-white rounded-lg shadow p-8 text-center">
+            <div className="text-gray-400 text-5xl mb-4">📋</div>
+            <p className="text-gray-600">Пока нет записей в протоколе.</p>
+            <p className="text-gray-500 text-sm mt-2">
+              Записи появятся после того, как жюри начнёт выставлять оценки.
+            </p>
+          </div>
         )}
 
         {!loading && !error && entries.length > 0 && (
-          <div className="bg-white rounded-lg shadow overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-3 py-2 text-left text-gray-700">Время</th>
-                  <th className="px-3 py-2 text-left text-gray-700">Конкурс</th>
-                  <th className="px-3 py-2 text-left text-gray-700">Команда</th>
-                  <th className="px-3 py-2 text-left text-gray-700">Член жюри</th>
-                  <th className="px-3 py-2 text-right text-gray-700">Было</th>
-                  <th className="px-3 py-2 text-right text-gray-700">Стало</th>
-                </tr>
-              </thead>
-              <tbody>
-                {entries.map((entry, index) => {
-                  const date = new Date(entry.timestamp);
-                  const when = isNaN(date.getTime())
-                    ? entry.timestamp
-                    : date.toLocaleString("ru-RU", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      });
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+              <span className="text-sm text-gray-600">
+                Показано записей: <strong>{entries.length}</strong>
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-gray-700 font-medium">Время</th>
+                    <th className="px-4 py-3 text-left text-gray-700 font-medium">Конкурс</th>
+                    <th className="px-4 py-3 text-left text-gray-700 font-medium">Команда/Участник</th>
+                    <th className="px-4 py-3 text-left text-gray-700 font-medium">Член жюри</th>
+                    <th className="px-4 py-3 text-right text-gray-700 font-medium">Было</th>
+                    <th className="px-4 py-3 text-right text-gray-700 font-medium">Стало</th>
+                    <th className="px-4 py-3 text-center text-gray-700 font-medium">Изменение</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {entries.map((entry, index) => {
+                    const date = new Date(entry.timestamp);
+                    const when = isNaN(date.getTime())
+                      ? entry.timestamp
+                      : date.toLocaleString("ru-RU", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        });
 
-                  return (
-                    <tr
-                      key={`${entry.timestamp}-${entry.teamId}-${entry.juryId}-${index}`}
-                      className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
-                    >
-                      <td className="px-3 py-2 whitespace-nowrap text-gray-700">{when}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-gray-700">
-                        {contestNames[entry.contestId] || entry.contestId}
-                      </td>
-                      <td className="px-3 py-2 whitespace-nowrap text-gray-800">
-                        {entry.teamName}
-                      </td>
-                      <td className="px-3 py-2 whitespace-nowrap text-gray-800">
-                        {entry.juryName}
-                      </td>
-                      <td className="px-3 py-2 text-right text-gray-700">
-                        {entry.previousScore === null ? "—" : entry.previousScore.toFixed(1)}
-                      </td>
-                      <td className="px-3 py-2 text-right font-semibold text-gray-900">
-                        {entry.newScore.toFixed(1)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                    const diff = entry.previousScore !== null 
+                      ? entry.newScore - entry.previousScore 
+                      : entry.newScore;
+                    const isIncrease = diff > 0;
+                    const isDecrease = diff < 0;
+
+                    return (
+                      <tr
+                        key={`${entry.timestamp}-${entry.teamId}-${entry.juryId}-${index}`}
+                        className="hover:bg-gray-50 transition-colors"
+                      >
+                        <td className="px-4 py-3 whitespace-nowrap text-gray-600">
+                          {when}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-gray-800">
+                          {formatContestName(entry)}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-gray-800 font-medium">
+                          {entry.teamName}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-gray-600">
+                          {entry.juryName}
+                        </td>
+                        <td className="px-4 py-3 text-right text-gray-500">
+                          {entry.previousScore === null ? "—" : entry.previousScore.toFixed(1)}
+                        </td>
+                        <td className="px-4 py-3 text-right font-semibold text-gray-900">
+                          {entry.newScore.toFixed(1)}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            isIncrease 
+                              ? 'bg-green-100 text-green-800' 
+                              : isDecrease 
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {isIncrease && '+'}
+                            {diff.toFixed(1)}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
