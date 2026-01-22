@@ -56,26 +56,18 @@ async function connectRedis(): Promise<RedisClientType> {
   const newClient = createClient({
     url: redisUrl,
     socket: {
-      connectTimeout: 10000,
-      keepAlive: 30000,
+      connectTimeout: 5000, // Уменьшено с 10s до 5s
+      keepAlive: 10000, // Уменьшено с 30s до 10s для Vercel
       reconnectStrategy: (retries: number) => {
-        // Максимум 10 попыток переподключения
-        if (retries > 10) {
-          console.error('Redis: Max retries (10) reached, giving up');
+        // Максимум 3 попытки для serverless (быстрее fail)
+        if (retries > 3) {
+          console.error('Redis: Max retries (3) reached, giving up');
           return false;
         }
 
-        // Exponential backoff: 2^retries * 50ms, максимум 3000ms
-        const baseDelay = Math.min(Math.pow(2, retries) * 50, 3000);
-        
-        // Добавляем jitter (случайное значение 0-200ms) для избежания thundering herd
-        const jitter = Math.floor(Math.random() * 200);
-        const delay = baseDelay + jitter;
-
-        console.log(
-          `Redis: Reconnecting in ${delay}ms (attempt ${retries}/10)`
-        );
-
+        // Быстрый backoff для serverless: 100ms, 200ms, 400ms
+        const delay = Math.min(100 * Math.pow(2, retries), 500);
+        console.log(`Redis: Reconnecting in ${delay}ms (attempt ${retries}/3)`);
         return delay;
       },
     },

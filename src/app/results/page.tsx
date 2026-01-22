@@ -8,6 +8,7 @@ import { getAllEvents } from '@/services/eventService';
 import { getEventResults } from '@/services/resultsService';
 import { sanitizeHTML, sanitizeText } from '@/lib/sanitize';
 import Breadcrumbs from '@/components/Breadcrumbs';
+import EventSelector from '@/components/EventSelector';
 
 interface ResultsPageProps {
   searchParams: Promise<{ eventId?: string }>;
@@ -42,19 +43,10 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Выберите мероприятие:
           </label>
-          <select
-            className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg"
-            value={selectedEventId || ''}
-            onChange={(e) => {
-              window.location.href = `/results?eventId=${e.target.value}`;
-            }}
-          >
-            {events.map((event) => (
-              <option key={event.id} value={event.id}>
-                {event.name}
-              </option>
-            ))}
-          </select>
+          <EventSelector 
+            events={events.map(e => ({ id: e.id, name: e.name }))} 
+            selectedEventId={selectedEventId || ''} 
+          />
         </div>
 
         {selectedEvent && (
