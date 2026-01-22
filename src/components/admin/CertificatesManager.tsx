@@ -313,6 +313,16 @@ export default function CertificatesManager({
 
   return (
     <div className="space-y-6">
+      {/* Designer Link */}
+      <div className="flex justify-end">
+        <a
+          href={`/admin/events/${eventId}/certificates/designer`}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+        >
+          🎨 Конструктор сертификатов
+        </a>
+      </div>
+
       {/* Tabs */}
       <div className="border-b border-gray-200" role="tablist" aria-label="Разделы управления сертификатами">
         <nav className="flex -mb-px flex-wrap">
