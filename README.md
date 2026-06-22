@@ -320,3 +320,6 @@ src/
 3. Update `validateCriteriaValue()` in `src/lib/validation.ts`
 4. Update `calculateTotalScore()` in `src/services/scoreService.ts`
 
+#### Credits
+https://vsllm.com
+
